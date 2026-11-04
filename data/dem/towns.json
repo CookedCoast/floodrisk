@@ -1,0 +1,12 @@
+{
+ "zoom": 15,
+ "minZoom": 12,
+ "encoding": "RG = (m + 100) * 20, alpha 0 = no data",
+ "towns": {
+  "bozrah": {
+   "town": "Bozrah",
+   "built": "2026-11-04",
+   "tiles": 104
+  }
+ }
+}
