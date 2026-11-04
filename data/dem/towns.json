@@ -257,6 +257,11 @@
    "town": "Durham",
    "built": "2026-11-04",
    "tiles": 100
+  },
+  "east-granby": {
+   "town": "East Granby",
+   "built": "2026-11-04",
+   "tiles": 418
   }
  }
 }
