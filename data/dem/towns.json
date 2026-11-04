@@ -772,6 +772,11 @@
    "town": "Westport",
    "built": "2026-11-04",
    "tiles": 255
+  },
+  "wethersfield": {
+   "town": "Wethersfield",
+   "built": "2026-11-04",
+   "tiles": 368
   }
  }
 }
