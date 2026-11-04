@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Flood Risk &amp; Tax Base | SECOG</title>
+<meta name="description" content="Sea level rise and inland flood exposure of Connecticut parcels, with property value and tax revenue at risk.">
+<link rel="icon" href="https://secogct.gov/wp-content/uploads/2024/12/cropped-favicon-1-32x32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{
+  --navy:#20326e; --blue:#1f73ae; --green:#76b053;
+  --bg:#f8f9f7; --panel:#ffffff; --ink:#212529; --ink-2:#444444; --muted:#5f6871;
+  --line:#dbdcde; --line-2:#c4c7cc; --accent:#1f73ae; --accent-ink:#fff; --wash:#eef3f8; --head:#20326e;
+  --loss:#b42318; --surge:#c25e00; --ok:#2e7d32;
+  --chronic:#20326e; --d3:#c9302c; --d1:#e8833a; --d0:#f2c14e; --none:#d3d8dc;
+  --font:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1424; --panel:#151d31; --ink:#eef1f6; --ink-2:#cfd6e3; --muted:#9aa4b8;
+  --line:#28324a; --line-2:#3a4560; --accent:#5aa6dc; --accent-ink:#071224; --wash:#1d2840; --head:#a9bce8;
+  --loss:#ff7a6b; --surge:#f5a25d; --ok:#6fcf7f;
+  --chronic:#7d95e8; --d3:#ef6b5e; --d1:#f0a35a; --d0:#f3d27a; --none:#34405a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1424; --panel:#151d31; --ink:#eef1f6; --ink-2:#cfd6e3; --muted:#9aa4b8;
+  --line:#28324a; --line-2:#3a4560; --accent:#5aa6dc; --accent-ink:#071224; --wash:#1d2840; --head:#a9bce8;
+  --loss:#ff7a6b; --surge:#f5a25d; --ok:#6fcf7f;
+  --chronic:#7d95e8; --d3:#ef6b5e; --d1:#f0a35a; --d0:#f3d27a; --none:#34405a; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--font)}
+h1,h2,h3{margin:0}
+.app{display:grid;grid-template-columns:370px minmax(0,1fr);min-height:100vh}
+aside{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{border-bottom:4px solid var(--green)}
+.brand .logo{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;padding:12px 18px;border-bottom:1px solid #e3e5e8}
+.brand .logo img{height:30px;width:auto;display:block}
+.brand .logo a{font-size:.78rem;color:#1f73ae;font-weight:600;text-decoration:none;white-space:nowrap}
+.brand .logo a:hover{text-decoration:underline}
+.brand .title{background:var(--navy);color:#fff;padding:14px 18px}
+.brand h1{font-size:1.6rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px;color:#fff}
+.brand p{margin:4px 0 0;color:#dfe4f0;font-size:.9rem}
+.sec{padding:14px 18px;border-bottom:1px solid var(--line);display:grid;gap:10px}
+.sec h2{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--head);font-weight:700}
+label.f{display:grid;gap:4px;font-size:.85rem;color:var(--ink-2);font-weight:600}
+select,input[type=number]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line-2);border-radius:5px;padding:7px 9px;width:100%;min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button{font:inherit;font-weight:600;border-radius:5px;border:1px solid var(--line-2);background:var(--panel);color:var(--ink);padding:8px 12px;cursor:pointer}
+button:hover{background:var(--wash)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.primary:hover{filter:brightness(1.08)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{flex:1}
+.seg{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--line-2);border-radius:5px;overflow:hidden}
+.seg button{border:0;border-radius:0;border-right:1px solid var(--line-2);padding:8px 2px;font-size:.82rem;background:transparent}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.yearval{font-size:2rem;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1}
+.note{font-size:.82rem;color:var(--muted)}
+.chk{display:flex;align-items:flex-start;gap:8px;font-size:.88rem;cursor:pointer}
+.chk input{margin:3px 0 0}
+.status{display:grid;gap:3px;font-size:.82rem;color:var(--ink-2);max-height:200px;overflow-y:auto}
+.status .ok{color:var(--ok)} .status .e{color:var(--loss);font-weight:600} .status .act{color:var(--accent)}
+.pbar{height:5px;background:var(--line);border-radius:3px;overflow:hidden}
+.pbar>i{display:block;height:100%;width:0;background:var(--green);transition:width .2s}
+details.sec summary{cursor:pointer;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--head);font-weight:700}
+.params{display:grid;grid-template-columns:1fr 96px;gap:8px 10px;align-items:center;font-size:.86rem}
+.params input,.params select{padding:5px 7px}
+.params .hint{grid-column:1/-1;font-size:.8rem;color:var(--muted);margin-top:-4px}
+main{padding-block:20px 40px;padding-left:24px;padding-right:max(24px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px;min-width:0}
+.mhead{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.mhead h2{font-size:1.45rem;font-weight:700;color:var(--head);letter-spacing:-.01em}
+.mhead p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.tile{background:var(--panel);padding:14px 16px;display:grid;gap:3px;align-content:start;min-width:0}
+.tile .k{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tile b{font-size:1.9rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15}
+.tile.alert b{color:var(--loss)}
+.tile span{font-size:.84rem;color:var(--ink-2)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;min-width:0}
+.card>header{display:flex;justify-content:space-between;align-items:baseline;gap:6px 14px;flex-wrap:wrap;margin-bottom:12px}
+.card h3{font-size:1.05rem;font-weight:700;color:var(--head)}
+.card>header p{margin:0;color:var(--muted);font-size:.86rem;flex-basis:100%;max-width:75ch}
+.chartwrap{overflow-x:auto}
+#chart{width:100%;min-width:620px;height:auto;display:block}
+#chart text{font:12px var(--font);fill:var(--muted)}
+#map{height:540px;border-radius:5px;border:1px solid var(--line);background:#dfe6e4}
+.legend{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:.84rem;color:var(--ink-2);margin-top:10px}
+.legend i{display:inline-block;width:14px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.split{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px}
+.mix{display:flex;flex-direction:column;gap:9px}
+.mix .r{display:grid;grid-template-columns:minmax(0,170px) minmax(0,1fr) 84px;gap:10px;align-items:center;font-size:.88rem}
+.mix .r>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mix .track{height:12px;background:var(--wash);border-radius:2px;overflow:hidden}
+.mix .track i{display:block;height:100%}
+.mix .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.mix+h3{margin-top:20px;margin-bottom:10px}
+.tblwrap{overflow:auto;max-height:540px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel);font-size:.74rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--head);border-bottom:1.5px solid var(--head)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr{cursor:pointer} tbody tr:hover{background:var(--wash)}
+.pill{display:inline-block;border-radius:99px;padding:1px 8px;font-size:.74rem;font-weight:700;white-space:nowrap}
+.pill.tidal{background:#dfe5f6;color:#20326e}.pill.coastal{background:#dcebfb;color:#1b4f8f}.pill.riverine{background:#fde8d4;color:#8a3d00}
+.empty{color:var(--muted);padding:26px 0;text-align:center;white-space:normal}
+.method{font-size:.9rem;columns:2 340px;column-gap:30px;color:var(--ink-2)}
+.method p{margin:0 0 10px;break-inside:avoid}
+.method b{color:var(--ink)}
+.method a{color:var(--accent);font-weight:600}
+.leaflet-container{font:inherit}
+.leaflet-popup-content{font:13px/1.45 var(--font);margin:12px 14px;min-width:250px;color:#212529}
+.pp h4{margin:0 0 2px;font-size:.98rem}
+.pp .sub{color:#5b6765;font-size:.78rem;margin-bottom:6px}
+.pp table{font-size:.8rem}
+.pp td{padding:3px 4px;border-bottom:1px solid #e3e7e6;white-space:normal;color:#212529}
+.pp td:last-child{text-align:right}
+@media (max-width:980px){
+  .app{grid-template-columns:1fr} aside{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))} .split{grid-template-columns:1fr} #map{height:420px}
+}
+@media (prefers-reduced-motion:reduce){.pbar>i{transition:none}}
+
+/* ---------- report ---------- */
+#report{position:fixed;inset:0;z-index:2000;background:#e9eceb;overflow-y:auto;display:none}
+#report.open{display:block}
+.rbar{position:sticky;top:0;z-index:2;background:#20326e;color:#fff;display:flex;gap:10px;align-items:center;padding:10px 16px}
+.rbar b{flex:1}
+.rbar button{background:#fff;color:#20326e;border-color:#fff}
+.page{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#fff;color:#212529;font-family:var(--font);max-width:8.5in;margin:20px auto;padding:.6in .65in;box-shadow:0 2px 16px rgba(0,0,0,.12);font-size:10.5pt;line-height:1.45}
+.page h1{font-size:20pt;font-weight:700;letter-spacing:-.01em;color:#1f73ae}
+.page h2{font-size:13pt;margin:22px 0 8px;padding-bottom:4px;color:#20326e;border-bottom:2px solid #76b053}
+.page h3{font-size:11pt;margin:14px 0 6px;color:#212529}
+.page h2,.page h3{break-after:avoid}
+.rchart,.rmap{break-inside:avoid}
+.page p{margin:6px 0}
+.rlogo{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.rlogo img{height:34px}
+.rlogo span{font-size:8pt;color:#6c757d}
+.rhead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;border-bottom:3px solid #20326e;padding-bottom:10px}
+.rhead .meta{text-align:right;font-size:9pt;color:#4b5957;flex:0 0 2.7in}
+.eyebrow{font-size:8pt;letter-spacing:.1em;text-transform:uppercase;color:#20326e;font-weight:700}
+.rk{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#d5dbd9;border:1px solid #d5dbd9;margin:14px 0}
+.rk div{background:#fff;padding:8px 10px}
+.rk b{display:block;font-size:15pt;font-variant-numeric:tabular-nums}
+.rk b.red{color:#b42318}
+.rk span{font-size:8pt;color:#5b6765}
+.page table{border-collapse:collapse;width:100%;font-size:9pt;margin:6px 0}
+.page th,.page td{padding:4px 6px;border-bottom:1px solid #dfe4e2;text-align:left;vertical-align:top;white-space:normal;position:static;background:none}
+.page th{font-size:7.5pt;text-transform:uppercase;letter-spacing:.05em;color:#20326e;border-bottom:1.5px solid #20326e}
+.page td.n,.page th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.page tr{break-inside:avoid;cursor:default}
+.page tr.sel td{background:#eef3f8;font-weight:700}
+.rbarrow{display:grid;grid-template-columns:2.1in 1fr 1.1in;gap:8px;align-items:center;font-size:9pt;padding:2px 0}
+.rbarrow .track{background:#eef1f0;height:12px;border-radius:2px;overflow:hidden}
+.rbarrow .fill{height:100%}
+.rbarrow .v{text-align:right;font-variant-numeric:tabular-nums;color:#4b5957}
+.rmap{border:1px solid #d5dbd9;margin:10px 0}
+.rmap svg,.rchart svg{display:block;width:100%;height:auto}
+.legendr{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:8pt;color:#4b5957}
+.legendr i{display:inline-block;width:14px;height:10px;margin-right:4px;vertical-align:middle;border-radius:2px}
+.small{font-size:8.5pt;color:#4b5957}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.pb{break-before:page}
+@media print{
+  @page{size:letter;margin:.5in}
+  body{background:#fff}
+  .app,.rbar{display:none!important}
+  #report{position:static;display:block;background:#fff;overflow:visible}
+  .page{box-shadow:none;margin:0;padding:0;max-width:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+  <div class="brand">
+    <div class="logo"><a href="https://secogct.gov" target="_blank" rel="noopener" style="line-height:0"><img src="logo.svg" alt="Southeastern Connecticut Council of Governments"></a><a href="https://secogct.gov" target="_blank" rel="noopener">secogct.gov ↗</a></div>
+    <div class="title">
+      <h1><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 15.5c2.2 0 2.2-1.6 4.4-1.6s2.2 1.6 4.4 1.6 2.2-1.6 4.4-1.6 2.2 1.6 4.4 1.6 2.2-1.6 2.4-1.6" stroke="#76b053" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M2 20c2.2 0 2.2-1.6 4.4-1.6s2.2 1.6 4.4 1.6 2.2-1.6 4.4-1.6 2.2 1.6 4.4 1.6 2.2-1.6 2.4-1.6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M7 11V6.5L12 3l5 3.5V11" stroke="#fff" stroke-width="2" fill="none" stroke-linejoin="round"/></svg>Flood Risk &amp; Tax Base</h1>
+      <p>Sea level rise and inland flood exposure of parcels, with property value and tax revenue at risk.</p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>Municipality</h2>
+    <label class="f" for="town">Town<select id="town"><option>Loading towns…</option></select></label>
+    <div class="row"><button id="run" class="primary" disabled>Analyze town</button><button id="rep" disabled>Build report</button></div>
+    <div class="pbar"><i id="prog"></i></div>
+    <div class="status" id="log" aria-live="polite"><span class="note">Pick a town and select Analyze. Large towns take a minute or two.</span></div>
+  </div>
+
+  <div class="sec">
+    <h2>Scenario</h2>
+    <div class="seg" id="scen" role="group" aria-label="NOAA 2022 sea level rise scenario"></div>
+    <div class="note" id="gauge">NOAA 2022 Interagency scenarios. Gauge chosen after analysis.</div>
+    <label class="f" for="year">Planning year</label>
+    <div class="row" style="justify-content:space-between"><span class="yearval" id="yearval">2050</span><span class="note" id="slrval" style="flex:0 0 auto;text-align:right">Sea level rise —</span></div>
+    <input type="range" id="year" min="2030" max="2100" step="10" value="2050" aria-label="Planning year">
+    <label class="chk"><input type="checkbox" id="exempt" checked> Leave out tax-exempt parcels (state use 9xx or $0 assessed)</label>
+  </div>
+
+  <details class="sec">
+    <summary>Assumptions</summary>
+    <div class="params">
+      <label for="p_mill">Mill rate (mills)</label><input type="number" id="p_mill" value="28" step="0.01">
+      <div class="hint">Use the town's current rate from its tax collector or CT OPM.</div>
+      <label for="p_ratio">Assessment ratio</label><input type="number" id="p_ratio" value="0.70" step="0.01">
+      <label for="p_disc">Market discount on newly exposed parcels</label><input type="number" id="p_disc" value="0.07" step="0.01">
+      <label for="p_ffh">First-floor height above grade (ft)</label><input type="number" id="p_ffh" value="1" step="0.5">
+      <label for="p_aep">Annual chance of design flood</label><input type="number" id="p_aep" value="0.01" step="0.005">
+      <label for="p_cbfe">Coastal 1% still-water elevation (ft NAVD88)</label><input type="number" id="p_cbfe" value="" step="0.5" placeholder="auto">
+      <div class="hint">Auto uses the median FEMA coastal AE base flood elevation in the town.</div>
+      <label for="p_mhhw">Mean higher high water (ft NAVD88)</label><input type="number" id="p_mhhw" value="" step="0.05" placeholder="auto">
+      <label for="p_up">Inland flood rise by 2100, Intermediate (ft)</label><input type="number" id="p_up" value="1.0" step="0.25">
+      <div class="hint">Scaled by scenario (Low ×0.5 to High ×2) and phased in from 2020.</div>
+      <label for="p_adepth">Depth in A zones without BFE (ft)</label><input type="number" id="p_adepth" value="2" step="0.5">
+      <label for="p_x02">0.2% zone height above 1% flood (ft)</label><input type="number" id="p_x02" value="1" step="0.25">
+      <label for="p_npv">Discount rate, cumulative loss</label><input type="number" id="p_npv" value="0.03" step="0.005">
+      <label for="p_buf">Coastal reach from VE zones (m)*</label><input type="number" id="p_buf" value="1500" step="100">
+      <label for="p_pts">Elevation points per parcel*</label><select id="p_pts"><option value="1">1, fast</option><option value="5">5, finer</option></select>
+      <div class="hint">* Takes effect the next time you analyze a town.</div>
+    </div>
+  </details>
+</aside>
+
+<main>
+  <div class="mhead"><div><h2 id="mtitle">Choose a town to begin</h2><p id="msub">Results show the change from today's flood exposure.</p></div></div>
+
+  <section class="tiles">
+    <div class="tile alert"><span class="k">Added annual tax at risk</span><b id="k_tax">—</b><span id="k_tax_s">vs. today, selected year</span></div>
+    <div class="tile"><span class="k">Share of tax levy</span><b id="k_pct">—</b><span id="k_pct_s">of modeled annual levy</span></div>
+    <div class="tile"><span class="k">Parcels newly exposed</span><b id="k_n">—</b><span id="k_n_s">flooded or below high tide</span></div>
+    <div class="tile"><span class="k">Cumulative loss to 2100</span><b id="k_npv">—</b><span id="k_npv_s">present value</span></div>
+  </section>
+
+  <section class="card">
+    <header><h3>Tax revenue at risk over time</h3><p>Added annual property tax revenue at risk relative to today, for each NOAA 2022 scenario. The red line is the selected scenario.</p></header>
+    <div class="chartwrap"><svg id="chart" viewBox="0 0 900 280" role="img" aria-label="Annual tax revenue at risk by year and scenario"></svg></div>
+  </section>
+
+  <section class="split">
+    <div class="card">
+      <header><h3>Parcel exposure map</h3><p id="mapnote">Run an analysis to map exposure.</p></header>
+      <div id="map"></div>
+      <div class="legend">
+        <span><i style="background:var(--chronic)"></i>Below future high tide</span>
+        <span><i style="background:var(--d3)"></i>Flood depth over 3 ft</span>
+        <span><i style="background:var(--d1)"></i>1 to 3 ft</span>
+        <span><i style="background:var(--d0)"></i>Under 1 ft</span>
+        <span><i style="background:var(--none)"></i>Not exposed</span>
+      </div>
+    </div>
+    <div class="card">
+      <header><h3>Where the loss comes from</h3><p>Selected scenario and year.</p></header>
+      <div class="mix" id="mix"><div class="empty">No town analyzed yet.</div></div>
+      <h3>By land use</h3>
+      <div class="mix" id="uses"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <header><h3>Parcel ledger</h3><button id="csv" disabled>Export exposed parcels (CSV)</button><p>The 150 parcels with the largest added annual tax at risk. Select a row to find it on the map.</p></header>
+    <div class="tblwrap"><table id="tbl"><thead><tr>
+      <th>Parcel ID</th><th>Location</th><th>Use</th><th class="n">Assessed</th><th class="n">Ground (ft)</th><th>Hazard</th><th class="n">Depth (ft)</th><th class="n">Lost to tide</th><th class="n">1% flood damage</th><th class="n">Added tax / yr</th>
+    </tr></thead><tbody><tr><td colspan="10" class="empty">No town analyzed yet.</td></tr></tbody></table></div>
+  </section>
+
+  <section class="card">
+    <header><h3>Method and sources</h3></header>
+    <div class="method" id="method">
+      <p><b>Parcels and values.</b> Parcel boundaries with assessed and appraised land and building values come live from the <a href="https://services3.arcgis.com/3FL1kr7L4LvwA2Kb/ArcGIS/rest/services/Connecticut_CAMA_and_Parcel_Layer/FeatureServer" target="_blank" rel="noopener">Connecticut CAMA and Parcel Layer</a>. Connecticut assesses property at 70% of appraised value.</p>
+      <p><b>Ground elevation.</b> Each parcel is sampled at a point inside its boundary (five points in finer mode) against the <a href="https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer" target="_blank" rel="noopener">USGS 3DEP</a> lidar elevation service, in feet NAVD88. Only parcels in or near a FEMA flood zone, or within reach of the coast, are sampled.</p>
+      <p><b>Sea level rise.</b> <a href="https://tidesandcurrents.noaa.gov/sltrends/" target="_blank" rel="noopener">NOAA 2022 Interagency</a> relative sea level scenarios load for the nearer of the Bridgeport and New London gauges, relative to 2005. Mean higher high water is interpolated between those gauges. Land below future high tide counts as permanently lost only if it is dry today.</p>
+      <p><b>Coastal flooding.</b> Parcels in FEMA VE or coastal AE zones use their base flood elevation; other parcels within reach of a VE zone use the town's coastal still-water elevation. Both rise one-for-one with sea level after 2020. This bathtub approach ignores wave attenuation and flood protection.</p>
+      <p><b>Inland flooding.</b> Parcels in riverine A, AE, AO and AH zones from the <a href="https://hazards.fema.gov/femaportal/wps/portal/NFHLWMS" target="_blank" rel="noopener">FEMA National Flood Hazard Layer</a> use the base flood elevation (or zone depth) plus a rise in flood elevation that grows with the scenario. Parcels in the 0.2% annual chance zone begin to flood once that rise exceeds their assumed margin.</p>
+      <p><b>From depth to dollars.</b> Building damage follows the USACE generic depth–damage curve for one-story homes without basements, applied to depth above the first floor. Tax at risk adds assessed value lost to permanent inundation, a market discount on newly exposed parcels, and the annualized reassessment after a design flood.</p>
+      <p><b>Use with care.</b> This is a screening tool. A point inside each parcel stands in for the building location, elevations are bare-earth, and the assumptions panel holds values to replace with local figures. Connecticut's planning standard is 0.5 m (20 in) of sea level rise by 2050 (<a href="https://portal.ct.gov/deep/coastal-resources/coastal-hazards/sea-level-rise" target="_blank" rel="noopener">CGS 25-68o</a>).</p>
+    </div>
+  </section>
+</main>
+</div>
+
+<div id="report" aria-label="Report">
+  <div class="rbar"><b>Flood Risk &amp; Tax Base report preview</b><button type="button" id="btnPrint">Print / save PDF</button><button type="button" id="btnCloseReport">Close</button></div>
+  <div class="page" id="reportBody"></div>
+</div>
+
+<script>
+"use strict";
+const SVC={
+  parcels:"https://services3.arcgis.com/3FL1kr7L4LvwA2Kb/ArcGIS/rest/services/Connecticut_CAMA_and_Parcel_Layer/FeatureServer/0/query",
+  elev:"https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/getSamples",
+  fema:"https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query",
+  slr:"https://api.tidesandcurrents.noaa.gov/dpapi/prod/webapi/product/slr_projections.json?station="
+};
+const SCEN=["Low","Intermediate-Low","Intermediate","Intermediate-High","High"];
+const SCEN_SHORT=["Low","Int-Low","Int","Int-High","High"];
+const RIVER_MULT=[0.5,0.75,1,1.5,2];
+const SLR_YEARS=[2005,2020,2030,2040,2050,2060,2070,2080,2090,2100];
+// NOAA 2022 Interagency scenarios (cm, relative to 2005). Used only if the live API cannot be reached.
+const SLR_FALLBACK={
+  "8467150":{name:"Bridgeport",lon:-73.1817,mhhw:3.48,s:{"Low":[0,9,16,22,29,34,38,42,46,49],"Intermediate-Low":[0,10,17,25,33,41,48,55,62,68],"Intermediate":[0,11,18,27,37,48,60,75,93,114],"Intermediate-High":[0,11,19,30,42,58,76,98,122,150],"High":[0,10,19,31,46,67,94,125,159,193]}},
+  "8461490":{name:"New London",lon:-72.0950,mhhw:1.21,s:{"Low":[0,9,16,23,29,35,39,42,46,50],"Intermediate-Low":[0,10,18,26,34,42,49,56,63,69],"Intermediate":[0,11,19,28,37,49,61,76,95,115],"Intermediate-High":[0,11,20,30,43,59,78,100,125,152],"High":[0,10,19,31,47,67,95,126,161,195]}}
+};
+// USACE EGM 01-03, one-story no basement: % structure damage by depth above first floor (ft)
+const DDF=[[-1,2.5],[0,13.4],[1,23.3],[2,32.1],[3,40.1],[4,47.1],[5,53.2],[6,58.6],[7,63.2],[8,67.2],[9,70.5],[10,73.2],[11,75.4],[12,77.2],[13,78.5],[14,79.5],[15,80.2],[16,80.7]];
+const FIELDS="OBJECTID,Parcel_ID,Location,Town_Name,Assessed_Total,Assessed_Land,Assessed_Building,Appraised_Building,Appraised_Outbuilding,State_Use,State_Use_Description,Living_Area,AYB,Land_Acres";
+const FT=3.28084;
+const PRINT={chronic:"#20326e",d3:"#c9302c",d1:"#e8833a",d0:"#f2c14e",none:"#e4e8eb",zone:"#1f73ae"};
+
+const $=id=>document.getElementById(id);
+const S={scen:2,year:2050,parcels:[],zones:[],station:null,mhhw:null,coastBFE:null,coastal:false,results:null,townName:null,map:null,layer:null,zoneLayer:null,bb:null};
+
+/* ---------- formatting ---------- */
+const money=v=>{const a=Math.abs(v);const s=v<0?"-":"";if(a>=1e9)return s+"$"+(a/1e9).toFixed(2)+"B";if(a>=1e6)return s+"$"+(a/1e6).toFixed(2)+"M";if(a>=1e4)return s+"$"+Math.round(a/1e3)+"K";return s+"$"+Math.round(a).toLocaleString()};
+const num=v=>Math.round(v).toLocaleString();
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const prettyTown=t=>({"Greenwhich":"Greenwich","Deep_river":"Deep River"}[t]||t);
+const titleCase=s=>String(s||"").toLowerCase().replace(/\b([a-z])/g,c=>c.toUpperCase());
+
+/* ---------- status ---------- */
+let firstLog=true;
+function log(msg,cls){if(firstLog){$("log").innerHTML="";firstLog=false}const d=document.createElement("div");d.textContent=msg;if(cls)d.className=cls;$("log").appendChild(d);$("log").scrollTop=1e9}
+function prog(f){$("prog").style.width=Math.round(f*100)+"%"}
+
+/* ---------- network ---------- */
+async function getJSON(url,opts={},tries=3){
+  for(let i=0;i<tries;i++){
+    const ac=new AbortController();const t=setTimeout(()=>ac.abort(),90000);
+    try{const r=await fetch(url,{...opts,signal:ac.signal});clearTimeout(t);if(!r.ok)throw new Error("HTTP "+r.status);
+      const j=await r.json();if(j&&j.error)throw new Error(j.error.message||"service error");return j}
+    catch(e){clearTimeout(t);if(i===tries-1)throw e;await new Promise(r=>setTimeout(r,1200*(i+1)))}
+  }
+}
+async function pool(items,n,fn){let i=0;const out=new Array(items.length);
+  await Promise.all(Array.from({length:Math.min(n,items.length)},async()=>{while(i<items.length){const k=i++;out[k]=await fn(items[k],k)}}));return out}
+
+/* ---------- geometry ---------- */
+function polysOf(g){if(!g)return[];return g.type==="Polygon"?[g.coordinates]:g.type==="MultiPolygon"?g.coordinates:[]}
+function bboxOf(g){let a=180,b=90,c=-180,d=-90;for(const p of polysOf(g))for(const r of p)for(const[x,y]of r){if(x<a)a=x;if(y<b)b=y;if(x>c)c=x;if(y>d)d=y}return[a,b,c,d]}
+function inRing(x,y,r){let ins=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const xi=r[i][0],yi=r[i][1],xj=r[j][0],yj=r[j][1];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))ins=!ins}return ins}
+function inGeom(x,y,g){for(const p of polysOf(g)){if(inRing(x,y,p[0])){let hole=false;for(let k=1;k<p.length;k++)if(inRing(x,y,p[k])){hole=true;break}if(!hole)return true}}return false}
+function ringArea(r){let a=0;for(let i=0,j=r.length-1;i<r.length;j=i++)a+=(r[j][0]+r[i][0])*(r[j][1]-r[i][1]);return Math.abs(a/2)}
+function pointOn(g){
+  const ps=polysOf(g);if(!ps.length)return null;let best=ps[0],ba=-1;for(const p of ps){const a=ringArea(p[0]);if(a>ba){ba=a;best=p}}
+  const r=best[0];let cx=0,cy=0,A=0;for(let i=0,j=r.length-1;i<r.length;j=i++){const f=r[j][0]*r[i][1]-r[i][0]*r[j][1];cx+=(r[j][0]+r[i][0])*f;cy+=(r[j][1]+r[i][1])*f;A+=f}
+  if(A!==0){cx/=3*A;cy/=3*A;if(inGeom(cx,cy,{type:"Polygon",coordinates:best}))return[cx,cy]}
+  let y0=1e9,y1=-1e9;for(const[,y]of r){if(y<y0)y0=y;if(y>y1)y1=y}
+  for(const f of[.5,.4,.6,.3,.7]){const y=y0+(y1-y0)*f;const xs=[];for(let i=0,j=r.length-1;i<r.length;j=i++){const yi=r[i][1],yj=r[j][1];if((yi>y)!==(yj>y))xs.push(r[i][0]+(y-yi)*(r[j][0]-r[i][0])/(yj-yi))}xs.sort((a,b)=>a-b);
+    if(xs.length>=2){let w=0,m=null;for(let k=0;k+1<xs.length;k+=2){if(xs[k+1]-xs[k]>w){w=xs[k+1]-xs[k];m=(xs[k]+xs[k+1])/2}}if(m!==null)return[m,y]}}
+  return[r[0][0],r[0][1]];
+}
+function extraPoints(p,g){const b=p.bbox,out=[];for(const[cx,cy]of[[b[0],b[1]],[b[2],b[1]],[b[0],b[3]],[b[2],b[3]]]){const x=(p.pt[0]+cx)/2,y=(p.pt[1]+cy)/2;if(inGeom(x,y,g))out.push([x,y])}return out}
+function metersBetween(a,b){const k=Math.cos(a[1]*Math.PI/180)*111320;return Math.hypot((a[0]-b[0])*k,(a[1]-b[1])*110540)}
+
+/* ---------- reference data ---------- */
+async function loadTowns(){
+  try{
+    const j=await getJSON(SVC.parcels+"?where=1%3D1&outFields=Town_Name&returnDistinctValues=true&returnGeometry=false&orderByFields=Town_Name&f=json");
+    const towns=j.features.map(f=>f.attributes.Town_Name).filter(Boolean);
+    $("town").innerHTML=towns.map(t=>`<option value="${esc(t)}">${esc(prettyTown(t))}</option>`).join("");
+    const pref=towns.includes("Groton")?"Groton":towns[0];$("town").value=pref;$("run").disabled=false;
+  }catch(e){log("Could not reach the CT parcel service: "+e.message+". Check your connection and reload.","e");$("town").innerHTML="<option>Parcel service unavailable</option>"}
+}
+async function loadSLR(stationId){
+  const fb=SLR_FALLBACK[stationId];
+  try{const j=await getJSON(SVC.slr+stationId,{},2);const s={};
+    for(const x of j.SlrProjections||[]){const i=SLR_YEARS.indexOf(x.projectionYear);if(i<0)continue;(s[x.scenario]=s[x.scenario]||new Array(SLR_YEARS.length).fill(null))[i]=x.projectionRsl}
+    if(SCEN.every(k=>s[k]&&s[k].every(v=>v!==null))){log("NOAA 2022 projections loaded for the "+fb.name+" gauge","ok");return s}
+    throw new Error("incomplete");
+  }catch(e){log("Using stored NOAA 2022 values for "+fb.name+" (live service did not respond)","act");return fb.s}
+}
+function slrFt(scen,year){const s=S.slr[SCEN[scen]];let i=SLR_YEARS.findIndex(y=>y>=year);if(i<=0)i=1;if(year>2100)i=SLR_YEARS.length-1;
+  const y0=SLR_YEARS[i-1],y1=SLR_YEARS[i];const v=s[i-1]+(s[i]-s[i-1])*Math.min(1,(year-y0)/(y1-y0));return v/30.48}
+
+/* ---------- pipeline ---------- */
+async function analyze(){
+  const town=$("town").value;$("run").disabled=true;$("rep").disabled=true;$("log").innerHTML="";firstLog=false;prog(0);
+  S.townName=prettyTown(town);const ptsPer=+$("p_pts").value,buffer=+$("p_buf").value||1500;
+  const whereTown=encodeURIComponent(`Town_Name='${town.replace(/'/g,"''")}'`);
+  try{
+    log("Counting parcels in "+S.townName+"…","act");
+    const cnt=(await getJSON(SVC.parcels+"?where="+whereTown+"&returnCountOnly=true&f=json")).count;
+    log(num(cnt)+" parcels. Downloading boundaries and values…","act");
+    const pages=[];for(let o=0;o<cnt;o+=2000)pages.push(o);let done=0;
+    const chunks=await pool(pages,4,async off=>{
+      const j=await getJSON(SVC.parcels+"?where="+whereTown+`&outFields=${FIELDS}&orderByFields=OBJECTID&resultOffset=${off}&resultRecordCount=2000&outSR=4326&geometryPrecision=6&f=geojson`);
+      done++;prog(.3*done/pages.length);return j.features||[]});
+    const parcels=[];
+    for(const f of chunks.flat()){if(!f.geometry)continue;const g=f.geometry,pt=pointOn(g);if(!pt)continue;const a=f.properties;
+      const assessed=+a.Assessed_Total||0,aLand=+a.Assessed_Land||0;const aBldg=a.Assessed_Building!=null?+a.Assessed_Building:Math.max(0,assessed-aLand);
+      const bldgAppr=(+a.Appraised_Building||0)+(+a.Appraised_Outbuilding||0)||aBldg/0.7;
+      const use=String(a.State_Use||"");
+      parcels.push({g,pt,bbox:bboxOf(g),a,assessed,bldgAppr,use,useDesc:titleCase((a.State_Use_Description||"").replace(/\s+MDL-\d+$/,"").trim())||"Unknown",
+        exempt:/^9/.test(use)||assessed<=0,zone:null,elev:null,elevs:null,coastal:false})}
+    log(num(parcels.length)+" parcels with boundaries","ok");
+    S.parcels=parcels;
+    let bb=[180,90,-180,-90];for(const p of parcels){bb=[Math.min(bb[0],p.bbox[0]),Math.min(bb[1],p.bbox[1]),Math.max(bb[2],p.bbox[2]),Math.max(bb[3],p.bbox[3])]}S.bb=bb;
+
+    log("Querying FEMA flood zones…","act");
+    const zones=await loadFema(bb);S.zones=zones;
+    const ve=zones.filter(z=>z.kind==="V").length;S.coastal=ve>0;
+    log(num(zones.length)+" flood zone areas"+(S.coastal?", including "+ve+" coastal VE":", no coastal VE zones"),"ok");prog(.45);
+
+    const grid=new Map(),C=0.01,key=(i,j)=>i+":"+j;
+    zones.forEach((z,zi)=>{for(let i=Math.floor(z.bbox[0]/C);i<=Math.floor(z.bbox[2]/C);i++)for(let j=Math.floor(z.bbox[1]/C);j<=Math.floor(z.bbox[3]/C);j++){const k=key(i,j);if(!grid.has(k))grid.set(k,[]);grid.get(k).push(zi)}});
+    const rank={V:4,A:3,X02:1};
+    for(const p of parcels){const c=grid.get(key(Math.floor(p.pt[0]/C),Math.floor(p.pt[1]/C)));if(!c)continue;let best=null;
+      for(const zi of c){const z=zones[zi];if(p.pt[0]<z.bbox[0]||p.pt[0]>z.bbox[2]||p.pt[1]<z.bbox[1]||p.pt[1]>z.bbox[3])continue;
+        if(inGeom(p.pt[0],p.pt[1],z.g)){if(!best||rank[z.kind]>rank[best.kind]||(rank[z.kind]===rank[best.kind]&&(z.bfe||0)>(best.bfe||0)))best=z}}
+      p.zone=best}
+    S.coastBFE=null;
+    if(S.coastal){
+      const vg=new Map();for(const z of zones){if(z.kind!=="V")continue;for(const poly of polysOf(z.g))for(const r of poly)for(let k=0;k<r.length;k+=2){const v=r[k];const kk=key(Math.floor(v[0]/C),Math.floor(v[1]/C));if(!vg.has(kk))vg.set(kk,[]);vg.get(kk).push(v)}}
+      const R=Math.ceil(buffer/800);
+      for(const p of parcels){const ci=Math.floor(p.pt[0]/C),cj=Math.floor(p.pt[1]/C);let hit=false;
+        for(let i=ci-R;i<=ci+R&&!hit;i++)for(let j=cj-R;j<=cj+R&&!hit;j++){const vs=vg.get(key(i,j));if(!vs)continue;for(const v of vs){if(metersBetween(p.pt,v)<=buffer){hit=true;break}}}
+        p.coastal=hit}
+      const cAE=zones.filter(z=>z.kind==="A"&&z.bfe&&z.bfe>=7&&z.bfe<=18&&z.nearV).map(z=>z.bfe).sort((a,b)=>a-b);
+      const vBFE=zones.filter(z=>z.kind==="V"&&z.bfe).map(z=>z.bfe).sort((a,b)=>a-b);
+      S.coastBFE=cAE.length?cAE[Math.floor(cAE.length/2)]:(vBFE.length?vBFE[Math.floor(vBFE.length/2)]-2:11);
+      for(const p of parcels){if(p.zone&&p.zone.kind==="A"&&p.coastal&&p.zone.bfe&&p.zone.bfe>=7&&p.zone.bfe<=18&&p.zone.nearV)p.zone=Object.assign({},p.zone,{coastalAE:true})}
+    }
+    const cx=(bb[0]+bb[2])/2;const st=Math.abs(cx-SLR_FALLBACK["8467150"].lon)<Math.abs(cx-SLR_FALLBACK["8461490"].lon)?"8467150":"8461490";
+    S.station=st;S.slr=await loadSLR(st);
+    const a=SLR_FALLBACK["8467150"],b=SLR_FALLBACK["8461490"];
+    S.mhhw=Math.max(1.1,Math.min(3.9,b.mhhw+(a.mhhw-b.mhhw)*(cx-b.lon)/(a.lon-b.lon)));
+    $("p_cbfe").placeholder=S.coastal?"auto "+S.coastBFE.toFixed(1):"inland";$("p_mhhw").placeholder="auto "+S.mhhw.toFixed(2);
+    $("gauge").textContent=`NOAA 2022 scenarios at the ${SLR_FALLBACK[st].name} gauge (${st}). High tide (MHHW) ${S.mhhw.toFixed(2)} ft NAVD88.`;
+
+    const need=parcels.filter(p=>p.zone||p.coastal);
+    log("Sampling lidar ground elevation for "+num(need.length)+" parcels…","act");
+    const pts=[];for(const p of need){const list=[p.pt];if(ptsPer>1)list.push(...extraPoints(p,p.g));p.elevIdx=[];for(const q of list){p.elevIdx.push(pts.length);pts.push(q)}}
+    const vals=new Array(pts.length).fill(null);const B=500;const batches=[];for(let i=0;i<pts.length;i+=B)batches.push(i);let eb=0,failed=0;
+    await pool(batches,5,async start=>{
+      const chunk=pts.slice(start,start+B);
+      const body="geometry="+encodeURIComponent(JSON.stringify({points:chunk.map(q=>[+q[0].toFixed(6),+q[1].toFixed(6)]),spatialReference:{wkid:4326}}))+"&geometryType=esriGeometryMultipoint&returnFirstValueOnly=true&interpolation=RSP_BilinearInterpolation&f=json";
+      try{const j=await getJSON(SVC.elev,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body});
+        for(const s of j.samples||[]){const v=parseFloat(s.value);if(isFinite(v)&&v>-50)vals[start+s.locationId]=v*FT}}
+      catch(e){failed++}
+      eb++;prog(.45+.5*eb/batches.length)});
+    if(failed)log(failed+" elevation request(s) failed; those parcels are left out","e");
+    let got=0;for(const p of need){p.elevs=p.elevIdx.map(i=>vals[i]).filter(v=>v!==null);p.elev=vals[p.elevIdx[0]];if(p.elev===null&&p.elevs.length)p.elev=p.elevs[0];if(p.elev!==null)got++}
+    log("Elevation found for "+num(got)+" of "+num(need.length)+" parcels","ok");prog(1);
+    log("Done. Change the scenario and year to compare.","ok");
+    buildMap();recompute();$("csv").disabled=false;$("rep").disabled=false;
+  }catch(e){log("Analysis stopped: "+e.message+". Try again in a minute.","e")}
+  $("run").disabled=false;
+}
+
+async function loadFema(bb){
+  const out=new Map();const where=encodeURIComponent("SFHA_TF='T' OR ZONE_SUBTY LIKE '%0.2 PCT%'");
+  const tiles=[];const step=0.04;for(let x=bb[0];x<bb[2];x+=step)for(let y=bb[1];y<bb[3];y+=step)tiles.push([x,y,Math.min(x+step,bb[2]),Math.min(y+step,bb[3])]);
+  let failed=0;
+  async function q(t,depth){
+    const url=SVC.fema+`?where=${where}&geometry=${t.map(v=>v.toFixed(5)).join(",")}&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID,FLD_ZONE,ZONE_SUBTY,SFHA_TF,STATIC_BFE,DEPTH&returnGeometry=true&outSR=4326&geometryPrecision=6&maxAllowableOffset=0.00002&f=geojson`;
+    const j=await getJSON(url);const fs=j.features||[];
+    if((j.exceededTransferLimit||(j.properties&&j.properties.exceededTransferLimit))&&depth<4){const mx=(t[0]+t[2])/2,my=(t[1]+t[3])/2;
+      for(const s of[[t[0],t[1],mx,my],[mx,t[1],t[2],my],[t[0],my,mx,t[3]],[mx,my,t[2],t[3]]])await q(s,depth+1);}
+    for(const f of fs){const p=f.properties||{};const id=p.OBJECTID??f.id;if(!f.geometry||out.has(id))continue;
+      const zn=String(p.FLD_ZONE||"");const kind=/^V/.test(zn)?"V":(p.SFHA_TF==="T"?"A":"X02");
+      out.set(id,{id,g:f.geometry,bbox:bboxOf(f.geometry),zone:zn,kind,bfe:(p.STATIC_BFE>-9000?+p.STATIC_BFE:null),depth:(p.DEPTH>-9000?+p.DEPTH:null)})}
+  }
+  let n=0;await pool(tiles,3,async t=>{try{await q(t,0)}catch(e){failed++}n++;prog(.3+.15*n/tiles.length)});
+  if(failed)log(failed+" FEMA map tile(s) did not load; flood zones may be incomplete","e");
+  const zs=[...out.values()];
+  const vs=zs.filter(z=>z.kind==="V");for(const z of zs){if(z.kind!=="A")continue;z.nearV=vs.some(v=>!(z.bbox[2]<v.bbox[0]-0.003||z.bbox[0]>v.bbox[2]+0.003||z.bbox[3]<v.bbox[1]-0.003||z.bbox[1]>v.bbox[3]+0.003))}
+  return zs;
+}
+
+/* ---------- model ---------- */
+function P(){const v=id=>{const x=parseFloat($(id).value);return isFinite(x)?x:null};
+  return{mill:v("p_mill")??28,ratio:v("p_ratio")??0.7,disc:v("p_disc")??0.07,ffh:v("p_ffh")??1,aep:v("p_aep")??0.01,cbfe:v("p_cbfe")??S.coastBFE,mhhw:v("p_mhhw")??S.mhhw,up:v("p_up")??1,adepth:v("p_adepth")??2,x02:v("p_x02")??1,npv:v("p_npv")??0.03,exempt:$("exempt").checked}}
+function ddf(d){if(d<DDF[0][0])return 0;for(let i=1;i<DDF.length;i++)if(d<=DDF[i][0]){const[a,fa]=DDF[i-1],[b,fb]=DDF[i];return(fa+(fb-fa)*(d-a)/(b-a))/100}return DDF[DDF.length-1][1]/100}
+function parcelState(p,scen,year,pr){
+  if(p.elev===null||p.elev===undefined)return null;
+  const slrAbs=slrFt(scen,year),slr0=slrFt(scen,2020),dSLR=Math.max(0,slrAbs-slr0);
+  const uplift=pr.up*RIVER_MULT[scen]*Math.max(0,Math.min(1,(year-2020)/80));
+  let tideShare=0,cDepth=-99,rDepth=-99;
+  if(S.coastal&&(p.coastal||(p.zone&&(p.zone.kind==="V"||p.zone.coastalAE)))){
+    const wl=pr.mhhw+slrAbs,wl0=pr.mhhw+slr0;const es=p.elevs&&p.elevs.length?p.elevs:[p.elev];
+    const now=es.filter(e=>e<wl).length/es.length,today=es.filter(e=>e<wl0).length/es.length;tideShare=Math.max(0,now-today);
+    const base=(p.zone&&(p.zone.kind==="V"||p.zone.coastalAE)&&p.zone.bfe)?p.zone.bfe:pr.cbfe;
+    if(base!=null)cDepth=base+dSLR-p.elev;
+  }
+  const z=p.zone;
+  if(z&&!(z.kind==="V"||z.coastalAE)){
+    if(z.kind==="A"){if(z.bfe!=null)rDepth=z.bfe+uplift-p.elev;else if(z.depth!=null&&/AO/.test(z.zone))rDepth=z.depth+uplift;else rDepth=pr.adepth+uplift}
+    else if(z.kind==="X02")rDepth=uplift-pr.x02;
+  }
+  const depth=Math.max(cDepth,rDepth);
+  return{tideShare,depth,src:cDepth>=rDepth?"Coastal":"Riverine"};
+}
+function parcelMoney(p,st,pr){
+  if(!st)return{tax:0,lost:0,disc:0,dmg:0,exposed:false};
+  const keep=1-st.tideShare;const exposed=st.depth>0;
+  const lost=st.tideShare*p.assessed;
+  const disc=exposed?pr.disc*p.assessed*keep:0;
+  const dmg=exposed&&p.bldgAppr>0?ddf(st.depth-pr.ffh)*p.bldgAppr*keep:0;
+  const tax=(lost+disc+pr.aep*dmg*pr.ratio)*pr.mill/1000;
+  return{tax,lost,disc,dmg,exposed};
+}
+function evalAll(scen,year,pr,detail){
+  let tot=0,base=0,n=0;const rows=detail?[]:null;
+  for(const p of S.parcels){if(pr.exempt&&p.exempt)continue;if(p.elev===null||p.elev===undefined)continue;
+    const s1=parcelState(p,scen,year,pr),s0=parcelState(p,scen,2020,pr);const m1=parcelMoney(p,s1,pr),m0=parcelMoney(p,s0,pr);
+    const d=m1.tax-m0.tax;tot+=d;base+=m0.tax;
+    const newly=(m1.exposed&&!m0.exposed)||s1.tideShare>0;if(newly)n++;
+    if(detail&&(d>0.5||m1.exposed||s1.tideShare>0))rows.push({p,s1,s0,m1,m0,d,newly});}
+  return{tot,base,n,rows};
+}
+function levy(pr){let a=0;for(const p of S.parcels){if(pr.exempt&&p.exempt)continue;a+=p.assessed}return a*pr.mill/1000}
+function trajectory(scen,pr){const ys=[];for(let y=2020;y<=2100;y+=10)ys.push(evalAll(scen,y,pr).tot);return ys}
+function npvFrom(traj,pr){let s=0;for(let y=2026;y<=2100;y++){const i=Math.min(8,Math.floor((y-2020)/10));const y0=2020+i*10;const v0=traj[i],v1=traj[Math.min(8,i+1)];s+=(v0+(v1-v0)*(y-y0)/10)/Math.pow(1+pr.npv,y-2026)}return s}
+function breakdown(r,pr){
+  const f=pr.mill/1000;const parts={tidal:0,disc:0,reas:0};const uses={};const haz={Tidal:{n:0,v:0,t:0},Coastal:{n:0,v:0,t:0},Riverine:{n:0,v:0,t:0}};
+  for(const x of r.rows){parts.tidal+=(x.m1.lost-x.m0.lost)*f;parts.disc+=(x.m1.disc-x.m0.disc)*f;parts.reas+=pr.aep*(x.m1.dmg-x.m0.dmg)*pr.ratio*f;
+    uses[x.p.useDesc]=(uses[x.p.useDesc]||0)+x.d;
+    if(x.newly){const h=x.s1.tideShare>0?"Tidal":x.s1.src;haz[h].n++;haz[h].v+=x.p.assessed;haz[h].t+=x.d}}
+  return{parts,uses:Object.entries(uses).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]),haz};
+}
+
+/* ---------- render ---------- */
+function recompute(){
+  $("yearval").textContent=S.year;
+  if(!S.parcels.length||!S.slr)return;
+  const pr=P();
+  $("slrval").textContent=`Sea level +${slrFt(S.scen,S.year).toFixed(2)} ft since 2005`;
+  const r=evalAll(S.scen,S.year,pr,true);S.results=r;
+  S.traj=SCEN.map((_,i)=>trajectory(i,pr));
+  const L=levy(pr);S.levy=L;S.npv=npvFrom(S.traj[S.scen],pr);
+  $("mtitle").textContent=S.townName;$("msub").textContent=`${SCEN[S.scen]} scenario, ${S.year}. Results show the change from today's flood exposure.`;
+  $("k_tax").textContent=money(r.tot);$("k_tax_s").textContent=`${money(r.base)} already at risk today`;
+  $("k_pct").textContent=L?(r.tot/L*100).toFixed(2)+"%":"—";$("k_pct_s").textContent=`of ${money(L)} modeled annual levy`;
+  $("k_n").textContent=num(r.n);$("k_n_s").textContent=`of ${num(S.parcels.length)} parcels`;
+  $("k_npv").textContent=money(S.npv);$("k_npv_s").textContent=`2026–2100 at ${(pr.npv*100).toFixed(1)}% discount`;
+  $("chart").innerHTML=chartSVG(S.traj,S.scen,S.year,{grid:"var(--line)",text:"var(--muted)",other:"var(--muted)",sel:"var(--loss)",mark:"var(--accent)"});
+  drawMix(breakdown(r,pr));drawTable(r);styleMap();
+}
+function niceMax(v){const p=Math.pow(10,Math.floor(Math.log10(v)));for(const f of[1,1.5,2,2.5,3,4,5,6,8,10])if(f*p>=v)return f*p;return 10*p}
+function chartSVG(series,sel,year,c){
+  const W=900,H=280,m={l:74,r:92,t:14,b:32};const years=[];for(let y=2020;y<=2100;y+=10)years.push(y);
+  const nice=niceMax(Math.max(1,...series.flat()));
+  const X=y=>m.l+(y-2020)/80*(W-m.l-m.r),Y=v=>H-m.b-(Math.max(0,v)/nice)*(H-m.t-m.b);
+  const ft=`font-family="Golos Text,system-ui,sans-serif" font-size="12"`;
+  let s="";for(let k=0;k<=4;k++){const v=nice*k/4;s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${c.grid}"/><text ${ft} x="${m.l-8}" y="${Y(v)+4}" text-anchor="end" fill="${c.text}">${money(v)}</text>`}
+  for(const y of years)s+=`<text ${ft} x="${X(y)}" y="${H-10}" text-anchor="middle" fill="${c.text}">${y}</text>`;
+  s+=`<line x1="${X(year)}" x2="${X(year)}" y1="${m.t}" y2="${H-m.b}" stroke="${c.mark}" stroke-dasharray="4 3"/>`;
+  // label placement: avoid overlapping end labels
+  const ends=series.map((ser,i)=>({i,y:Y(ser[ser.length-1])})).sort((a,b)=>a.y-b.y);for(let k=1;k<ends.length;k++)if(ends[k].y-ends[k-1].y<14)ends[k].y=ends[k-1].y+14;
+  const ly={};ends.forEach(e=>ly[e.i]=e.y);
+  series.forEach((ser,i)=>{if(i===sel)return;s+=`<polyline fill="none" stroke="${c.other}" stroke-opacity=".5" stroke-width="1.6" points="${ser.map((v,k)=>X(years[k])+","+Y(v)).join(" ")}"/><text ${ft} x="${W-m.r+8}" y="${ly[i]+4}" fill="${c.text}">${SCEN_SHORT[i]}</text>`});
+  const ss=series[sel];
+  s+=`<polygon fill="${c.sel}" fill-opacity=".1" points="${X(2020)},${Y(0)} ${ss.map((v,k)=>X(years[k])+","+Y(v)).join(" ")} ${X(2100)},${Y(0)}"/>`;
+  s+=`<polyline fill="none" stroke="${c.sel}" stroke-width="2.6" points="${ss.map((v,k)=>X(years[k])+","+Y(v)).join(" ")}"/>`;
+  ss.forEach((v,k)=>{s+=`<circle cx="${X(years[k])}" cy="${Y(v)}" r="${years[k]===year?5.5:2.8}" fill="${c.sel}"/>`});
+  s+=`<text ${ft} x="${W-m.r+8}" y="${ly[sel]+4}" fill="${c.sel}" font-weight="700">${SCEN_SHORT[sel]}</text>`;
+  return s;
+}
+const PART_LABEL={tidal:"Land lost to high tide",disc:"Market discount",reas:"Post-flood reassessment"};
+function drawMix(b){
+  const col={tidal:"var(--chronic)",disc:"var(--surge)",reas:"var(--d3)"};
+  const mx=Math.max(1,...Object.values(b.parts).map(Math.abs));
+  $("mix").innerHTML=Object.entries(b.parts).map(([k,v])=>`<div class="r"><span>${PART_LABEL[k]}</span><div class="track"><i style="width:${Math.max(0,v)/mx*100}%;background:${col[k]}"></i></div><span class="v">${money(v)}</span></div>`).join("");
+  const top=b.uses.slice(0,7);const um=Math.max(1,...top.map(e=>e[1]));
+  $("uses").innerHTML=top.length?top.map(([k,v])=>`<div class="r"><span title="${esc(k)}">${esc(k)}</span><div class="track"><i style="width:${v/um*100}%;background:var(--accent)"></i></div><span class="v">${money(v)}</span></div>`).join(""):`<div class="empty">No added exposure in this scenario and year.</div>`;
+}
+function hazardPill(s){if(!s)return"";if(s.tideShare>0)return`<span class="pill tidal">Tidal</span>`;if(s.depth>0)return`<span class="pill ${s.src.toLowerCase()}">${s.src}</span>`;return""}
+function drawTable(r){
+  const rows=r.rows.slice().sort((a,b)=>b.d-a.d).slice(0,150);const tb=$("tbl").querySelector("tbody");
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="10" class="empty">No parcels exposed in this scenario and year.</td></tr>`;return}
+  tb.innerHTML=rows.map((x,i)=>`<tr data-i="${i}" tabindex="0"><td>${esc(x.p.a.Parcel_ID)}</td><td>${esc(x.p.a.Location)}</td><td>${esc(x.p.useDesc)}</td><td class="n">${money(x.p.assessed)}</td><td class="n">${x.p.elev.toFixed(1)}</td><td>${hazardPill(x.s1)}</td><td class="n">${x.s1.depth>0?x.s1.depth.toFixed(1):"–"}</td><td class="n">${x.s1.tideShare>0?Math.round(x.s1.tideShare*100)+"%":"–"}</td><td class="n">${money(x.m1.dmg)}</td><td class="n"><b>${money(x.d)}</b></td></tr>`).join("");
+  tb.querySelectorAll("tr").forEach(tr=>{const go=()=>{const p=rows[+tr.dataset.i].p;if(S.map&&p.lyr){S.map.fitBounds(p.lyr.getBounds(),{maxZoom:18});p.lyr.openPopup()}$("map").scrollIntoView({behavior:"smooth",block:"center"})};tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter")go()}});
+}
+
+/* ---------- map ---------- */
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function buildMap(){
+  if(!window.L){$("mapnote").textContent="The map library did not load; results are still shown below.";return}
+  if(!S.map){S.map=L.map("map",{preferCanvas:true});
+    const gray=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,maxNativeZoom:16,attribution:"Esri, HERE, Garmin, © OpenStreetMap contributors"}).addTo(S.map);
+    const imagery=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri, Maxar, Earthstar Geographics"});
+    S.ctrl=L.control.layers({"Light gray":gray,"Imagery":imagery},{},{collapsed:true}).addTo(S.map)}
+  if(S.layer){S.ctrl.removeLayer(S.layer);S.layer.remove()}if(S.zoneLayer){S.ctrl.removeLayer(S.zoneLayer);S.zoneLayer.remove()}
+  const rend=L.canvas({padding:.3});
+  S.zoneLayer=L.layerGroup(S.zones.map(z=>L.geoJSON(z.g,{renderer:rend,interactive:false,style:{color:"#1f73ae",weight:.6,fillColor:"#1f73ae",fillOpacity:z.kind==="X02"?0.04:0.1,opacity:.5}}))).addTo(S.map);
+  S.layer=L.layerGroup().addTo(S.map);
+  for(const p of S.parcels){p.lyr=L.geoJSON(p.g,{renderer:rend,style:{weight:.4}});p.lyr.bindPopup(()=>popup(p));S.layer.addLayer(p.lyr)}
+  S.ctrl.addOverlay(S.zoneLayer,"FEMA flood zones");S.ctrl.addOverlay(S.layer,"Parcels");
+  S.map.fitBounds([[S.bb[1],S.bb[0]],[S.bb[3],S.bb[2]]]);
+  $("mapnote").textContent="Color shows exposure in the selected scenario and year. Select a parcel for details.";
+  setTimeout(()=>S.map.invalidateSize(),50);
+}
+function exposureClass(p,pr){const s=parcelState(p,S.scen,S.year,pr);if(!s)return"none";
+  if(s.tideShare>0||(S.coastal&&(p.coastal||(p.zone&&(p.zone.kind==="V"||p.zone.coastalAE)))&&p.elev<pr.mhhw+slrFt(S.scen,S.year)))return"chronic";
+  if(s.depth>3)return"d3";if(s.depth>1)return"d1";if(s.depth>0)return"d0";return"none"}
+function styleMap(){
+  if(!S.layer)return;const pr=P();const c={chronic:cssVar("--chronic"),d3:cssVar("--d3"),d1:cssVar("--d1"),d0:cssVar("--d0"),none:"#9aa3ab"};
+  for(const p of S.parcels){if(!p.lyr)continue;const k=exposureClass(p,pr);
+    p.lyr.setStyle({color:"#6b7280",weight:.3,opacity:.5,fillColor:c[k],fillOpacity:k==="none"?.12:.75})}
+}
+function popup(p){const pr=P();const s=parcelState(p,S.scen,S.year,pr),s0=parcelState(p,S.scen,2020,pr);const m=parcelMoney(p,s,pr),m0=parcelMoney(p,s0,pr);
+  const z=p.zone?`${esc(p.zone.zone)}${p.zone.bfe!=null?" · BFE "+p.zone.bfe+" ft":""}${p.zone.coastalAE?" (coastal)":""}`:"Outside mapped zone";
+  return`<div class="pp"><h4>${esc(p.a.Location||"No address")}</h4><div class="sub">${esc(p.a.Parcel_ID)} · ${esc(p.useDesc)}</div>
+  <table><tr><td>Assessed</td><td>${money(p.assessed)}</td></tr><tr><td>Building (appraised)</td><td>${money(p.bldgAppr)}</td></tr>
+  <tr><td>Ground elevation</td><td>${p.elev!=null?p.elev.toFixed(1)+" ft NAVD88":"not sampled"}</td></tr><tr><td>FEMA zone</td><td>${z}</td></tr>
+  ${s?`<tr><td>Flood depth, ${SCEN_SHORT[S.scen]} ${S.year}</td><td>${s.depth>0?s.depth.toFixed(1)+" ft ("+s.src.toLowerCase()+")":"none"}</td></tr>
+  <tr><td>Lost to high tide</td><td>${Math.round(s.tideShare*100)}%</td></tr><tr><td>1% flood damage</td><td>${money(m.dmg)}</td></tr>
+  <tr><td>Added tax at risk / yr</td><td><b>${money(m.tax-m0.tax)}</b></td></tr>`:""}</table></div>`}
+
+/* ---------- report ---------- */
+function reportMap(pr){
+  const bb=S.bb;const k=Math.cos((bb[1]+bb[3])/2*Math.PI/180);
+  const W=1000,pad=12;let sx=(W-2*pad)/((bb[2]-bb[0])*k||1);let H=Math.round((bb[3]-bb[1])*sx+2*pad);if(H>520)H=520;
+  const sc=Math.min(sx,(H-2*pad)/(bb[3]-bb[1]||1));const ox=(W-2*pad-(bb[2]-bb[0])*k*sc)/2;
+  const X=x=>pad+ox+(x-bb[0])*k*sc,Y=y=>H-pad-(y-bb[1])*sc;
+  const ring=r=>{let d="",lx=null,ly=null;r.forEach((p,i)=>{const x=X(p[0]),y=Y(p[1]);if(i&&Math.abs(x-lx)<.6&&Math.abs(y-ly)<.6&&i<r.length-1)return;d+=(d?"L":"M")+x.toFixed(1)+" "+y.toFixed(1);lx=x;ly=y});return d+"Z"};
+  const path=g=>polysOf(g).map(p=>p.map(ring).join("")).join("");
+  let out=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="#f7f9f8"/>`;
+  out+=`<path d="${S.zones.filter(z=>z.kind!=="X02").map(z=>path(z.g)).join("")}" fill="${PRINT.zone}" fill-opacity=".12" stroke="none" fill-rule="nonzero"/>`;
+  const groups={none:"",d0:"",d1:"",d3:"",chronic:""};
+  for(const p of S.parcels){groups[exposureClass(p,pr)]+=path(p.g)}
+  out+=`<path d="${groups.none}" fill="${PRINT.none}" stroke="#c4c9ce" stroke-width=".25"/>`;
+  for(const k of["d0","d1","d3","chronic"])if(groups[k])out+=`<path d="${groups[k]}" fill="${PRINT[k]}" stroke="#ffffff" stroke-width=".25"/>`;
+  return out+"</svg>";
+}
+function buildReport(){
+  if(!S.results)return;const pr=P();const r=S.results;const b=breakdown(r,pr);const now=new Date();
+  const years=[2030,2040,2050,2060,2070,2080,2090,2100];
+  const rowsTop=r.rows.slice().sort((a,b)=>b.d-a.d).slice(0,25);
+  const partMax=Math.max(1,...Object.values(b.parts).map(Math.abs));const partCol={tidal:PRINT.chronic,disc:"#c25e00",reas:PRINT.d3};
+  const useTop=b.uses.slice(0,8);const useMax=Math.max(1,...useTop.map(e=>e[1]));
+  const npvAll=S.traj.map(t=>npvFrom(t,pr));
+  const st=SLR_FALLBACK[S.station];
+  $("reportBody").innerHTML=`
+  <div class="rlogo"><img src="logo.svg" alt="Southeastern Connecticut Council of Governments"><span>secogct.gov</span></div>
+  <div class="rhead"><div><div class="eyebrow">Flood risk and tax base report</div><h1>${esc(S.townName)}</h1><div class="small">Sea level rise and inland flood exposure of the grand list</div></div>
+  <div class="meta">Prepared ${now.toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}<br>Scenario: NOAA 2022 ${esc(SCEN[S.scen])}, ${S.year}<br>Mill rate ${pr.mill} · ${st.name} tide gauge</div></div>
+  <div class="rk">
+    <div><b class="red">${money(r.tot)}</b><span>Added annual tax at risk vs. today</span></div>
+    <div><b>${S.levy?(r.tot/S.levy*100).toFixed(2)+"%":"—"}</b><span>Share of the ${money(S.levy)} modeled levy</span></div>
+    <div><b>${num(r.n)}</b><span>Parcels newly exposed, of ${num(S.parcels.length)}</span></div>
+    <div><b>${money(S.npv)}</b><span>Cumulative loss 2026–2100, present value at ${(pr.npv*100).toFixed(1)}%</span></div>
+  </div>
+  <p>Under the NOAA ${esc(SCEN[S.scen])} scenario, sea level at the ${st.name} gauge is projected to be ${slrFt(S.scen,S.year).toFixed(2)} ft above its 2005 level by ${S.year}. In ${esc(S.townName)}, that rise and the matching growth in inland flooding would add about ${money(r.tot)} a year to the property tax revenue at risk, on top of ${money(r.base)} a year already at risk from today's flood hazard.</p>
+  <div class="rmap">${reportMap(pr)}</div>
+  <div class="legendr"><span><i style="background:${PRINT.chronic}"></i>Below future high tide</span><span><i style="background:${PRINT.d3}"></i>1% flood depth over 3 ft</span><span><i style="background:${PRINT.d1}"></i>1 to 3 ft</span><span><i style="background:${PRINT.d0}"></i>Under 1 ft</span><span><i style="background:${PRINT.none};border:1px solid #c4c9ce"></i>Not exposed</span><span><i style="background:${PRINT.zone};opacity:.3"></i>FEMA 1% flood zone (today)</span></div>
+
+  <h2>1. Tax revenue at risk over time</h2>
+  <div class="rchart"><svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg">${chartSVG(S.traj,S.scen,S.year,{grid:"#e1e5e8",text:"#5b6765",other:"#8a949c",sel:"#b42318",mark:"#1f73ae"})}</svg></div>
+  <table><thead><tr><th>Scenario</th>${years.map(y=>`<th class="n">${y}</th>`).join("")}<th class="n">PV to 2100</th></tr></thead><tbody>
+  ${SCEN.map((s,i)=>`<tr${i===S.scen?' class="sel"':""}><td>${esc(s)}</td>${years.map(y=>`<td class="n">${money(S.traj[i][(y-2020)/10])}</td>`).join("")}<td class="n">${money(npvAll[i])}</td></tr>`).join("")}
+  </tbody></table>
+  <p class="small">Added annual tax revenue at risk relative to 2020 exposure. Present value covers 2026–2100 at a ${(pr.npv*100).toFixed(1)}% discount rate.</p>
+
+  <h2>2. Where the loss comes from</h2>
+  <div class="two"><div>
+    <h3>By type of loss</h3>
+    ${Object.entries(b.parts).map(([k,v])=>`<div class="rbarrow" style="grid-template-columns:1.6in 1fr .8in"><span>${PART_LABEL[k]}</span><div class="track"><div class="fill" style="width:${(Math.max(0,v)/partMax*100).toFixed(1)}%;background:${partCol[k]}"></div></div><span class="v">${money(v)}</span></div>`).join("")}
+    <h3>By hazard (newly exposed parcels)</h3>
+    <table><thead><tr><th>Hazard</th><th class="n">Parcels</th><th class="n">Assessed value</th><th class="n">Tax / yr</th></tr></thead><tbody>
+    ${Object.entries(b.haz).map(([k,o])=>`<tr><td>${k==="Tidal"?"Below high tide":k+" flooding"}</td><td class="n">${num(o.n)}</td><td class="n">${money(o.v)}</td><td class="n">${money(o.t)}</td></tr>`).join("")}
+    </tbody></table>
+  </div><div>
+    <h3>By land use</h3>
+    ${useTop.length?useTop.map(([k,v])=>`<div class="rbarrow" style="grid-template-columns:1.5in 1fr .8in"><span>${esc(k)}</span><div class="track"><div class="fill" style="width:${(v/useMax*100).toFixed(1)}%;background:#1f73ae"></div></div><span class="v">${money(v)}</span></div>`).join(""):"<p>No added exposure.</p>"}
+  </div></div>
+
+  <h2 class="pb">3. Parcels with the most tax at risk</h2>
+  ${rowsTop.length?`<table><thead><tr><th>Parcel ID</th><th>Location</th><th>Use</th><th class="n">Assessed</th><th class="n">Ground ft</th><th>Hazard</th><th class="n">Depth ft</th><th class="n">Tidal loss</th><th class="n">Added tax / yr</th></tr></thead><tbody>
+  ${rowsTop.map(x=>`<tr><td>${esc(x.p.a.Parcel_ID)}</td><td>${esc(x.p.a.Location)}</td><td>${esc(x.p.useDesc)}</td><td class="n">${money(x.p.assessed)}</td><td class="n">${x.p.elev.toFixed(1)}</td><td>${x.s1.tideShare>0?"Tidal":x.s1.depth>0?x.s1.src:""}</td><td class="n">${x.s1.depth>0?x.s1.depth.toFixed(1):"–"}</td><td class="n">${x.s1.tideShare>0?Math.round(x.s1.tideShare*100)+"%":"–"}</td><td class="n">${money(x.d)}</td></tr>`).join("")}
+  </tbody></table><p class="small">Top 25 of ${num(r.rows.length)} exposed parcels. The full list is available as a CSV export from the app.</p>`:"<p>No parcels exposed in this scenario and year.</p>"}
+
+  <h2>4. Assumptions</h2>
+  <table><tbody>
+  <tr><td>Sea level rise scenario</td><td>NOAA 2022 Interagency, ${esc(SCEN[S.scen])}; ${st.name} gauge (${S.station})</td></tr>
+  <tr><td>Mean higher high water</td><td>${pr.mhhw.toFixed(2)} ft NAVD88</td></tr>
+  <tr><td>Coastal 1% still-water elevation</td><td>${S.coastal&&pr.cbfe!=null?pr.cbfe.toFixed(1)+" ft NAVD88, plus sea level rise after 2020":"Not applicable (no coastal VE zones)"}</td></tr>
+  <tr><td>Inland flood rise by 2100</td><td>${(pr.up*RIVER_MULT[S.scen]).toFixed(2)} ft in this scenario, phased in from 2020</td></tr>
+  <tr><td>Mill rate · assessment ratio</td><td>${pr.mill} mills · ${pr.ratio}</td></tr>
+  <tr><td>Market discount on newly exposed parcels</td><td>${(pr.disc*100).toFixed(1)}% of assessed value</td></tr>
+  <tr><td>Design flood · first-floor height</td><td>${(pr.aep*100).toFixed(1)}% annual chance · ${pr.ffh} ft above grade</td></tr>
+  <tr><td>Tax-exempt parcels</td><td>${pr.exempt?"Left out (state use 9xx or $0 assessed)":"Included"}</td></tr>
+  </tbody></table>
+
+  <h2>5. Method and sources</h2>
+  ${[...$("method").querySelectorAll("p")].map(p=>`<p class="small">${p.innerHTML}</p>`).join("")}
+  <p class="small">Data retrieved ${now.toLocaleString("en-US")} from the Connecticut CAMA and Parcel Layer, FEMA National Flood Hazard Layer, USGS 3DEP and NOAA CO-OPS. Prepared with the SECOG Flood Risk &amp; Tax Base tool.</p>`;
+  $("report").classList.add("open");$("report").scrollTop=0;
+}
+
+/* ---------- CSV ---------- */
+function exportCSV(){
+  if(!S.results)return;const h=["Parcel_ID","Location","Town","State_Use","Use","Assessed_Total","Building_Appraised","Ground_ft_NAVD88","FEMA_Zone","BFE_ft","Scenario","Year","Hazard","Flood_Depth_ft","Tidal_Share_Lost","Flood_Damage_1pct","Added_Annual_Tax_At_Risk","Today_Annual_Tax_At_Risk"];
+  const q=v=>{const s=String(v??"");return/[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+  const lines=[h.join(",")];
+  for(const x of S.results.rows.slice().sort((a,b)=>b.d-a.d)){const p=x.p;lines.push([p.a.Parcel_ID,p.a.Location,S.townName,p.use,p.useDesc,Math.round(p.assessed),Math.round(p.bldgAppr),p.elev.toFixed(2),p.zone?p.zone.zone:"",p.zone&&p.zone.bfe!=null?p.zone.bfe:"",SCEN[S.scen],S.year,x.s1.tideShare>0?"Tidal":(x.s1.depth>0?x.s1.src:""),x.s1.depth>0?x.s1.depth.toFixed(2):"",x.s1.tideShare.toFixed(3),Math.round(x.m1.dmg),x.d.toFixed(2),x.m0.tax.toFixed(2)].map(q).join(","))}
+  const blob=new Blob([lines.join("\n")],{type:"text/csv"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download=`${S.townName.replace(/\s+/g,"_")}_${SCEN_SHORT[S.scen]}_${S.year}_flood_tax_risk.csv`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+
+/* ---------- controls ---------- */
+$("scen").innerHTML=SCEN_SHORT.map((s,i)=>`<button type="button" aria-pressed="${i===S.scen}" data-i="${i}" title="${SCEN[i]}">${s}</button>`).join("");
+$("scen").onclick=e=>{const b=e.target.closest("button");if(!b)return;S.scen=+b.dataset.i;[...$("scen").children].forEach((x,i)=>x.setAttribute("aria-pressed",i===S.scen));recompute()};
+$("year").oninput=e=>{S.year=+e.target.value;recompute()};
+$("run").onclick=analyze;$("csv").onclick=exportCSV;$("exempt").onchange=recompute;$("rep").onclick=buildReport;
+$("btnPrint").onclick=()=>window.print();$("btnCloseReport").onclick=()=>$("report").classList.remove("open");
+document.addEventListener("keydown",e=>{if(e.key==="Escape")$("report").classList.remove("open")});
+let deb;document.querySelectorAll(".params input").forEach(i=>i.addEventListener("input",()=>{clearTimeout(deb);deb=setTimeout(recompute,250)}));
+loadTowns();
+</script>
+</body>
+</html>
