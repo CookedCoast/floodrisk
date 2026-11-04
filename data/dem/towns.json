@@ -267,6 +267,11 @@
    "town": "East Haddam",
    "built": "2026-11-04",
    "tiles": 354
+  },
+  "east-hampton": {
+   "town": "East Hampton",
+   "built": "2026-11-04",
+   "tiles": 264
   }
  }
 }
