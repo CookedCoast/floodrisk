@@ -187,6 +187,11 @@
    "town": "Canterbury",
    "built": "2026-11-04",
    "tiles": 184
+  },
+  "canton": {
+   "town": "Canton",
+   "built": "2026-11-04",
+   "tiles": 202
   }
  }
 }
