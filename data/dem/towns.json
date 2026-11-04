@@ -492,6 +492,11 @@
    "town": "New Haven",
    "built": "2026-11-04",
    "tiles": 291
+  },
+  "new-milford": {
+   "town": "New Milford",
+   "built": "2026-11-04",
+   "tiles": 214
   }
  }
 }
