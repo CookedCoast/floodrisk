@@ -840,6 +840,66 @@
    "built": "2026-11-04",
    "parcels": 3337,
    "points": 3337
+  },
+  "thompson": {
+   "town": "Thompson",
+   "built": "2026-11-04",
+   "parcels": 5920,
+   "points": 5917
+  },
+  "tolland": {
+   "town": "Tolland",
+   "built": "2026-11-04",
+   "parcels": 6564,
+   "points": 6523
+  },
+  "torrington": {
+   "town": "Torrington",
+   "built": "2026-11-04",
+   "parcels": 14703,
+   "points": 14670
+  },
+  "trumbull": {
+   "town": "Trumbull",
+   "built": "2026-11-04",
+   "parcels": 12890,
+   "points": 12431
+  },
+  "union": {
+   "town": "Union",
+   "built": "2026-11-04",
+   "parcels": 782,
+   "points": 778
+  },
+  "vernon": {
+   "town": "Vernon",
+   "built": "2026-11-04",
+   "parcels": 10130,
+   "points": 10129
+  },
+  "voluntown": {
+   "town": "Voluntown",
+   "built": "2026-11-04",
+   "parcels": 1599,
+   "points": 1505
+  },
+  "wallingford": {
+   "town": "Wallingford",
+   "built": "2026-11-04",
+   "parcels": 16773,
+   "points": 16767
+  },
+  "warren": {
+   "town": "Warren",
+   "built": "2026-11-04",
+   "parcels": 1125,
+   "points": 1125
+  },
+  "washington": {
+   "town": "Washington",
+   "built": "2026-11-04",
+   "parcels": 2632,
+   "points": 2632
   }
  }
 }
