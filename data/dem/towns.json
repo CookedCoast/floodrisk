@@ -197,6 +197,11 @@
    "town": "Chaplin",
    "built": "2026-11-04",
    "tiles": 0
+  },
+  "cheshire": {
+   "town": "Cheshire",
+   "built": "2026-11-04",
+   "tiles": 192
   }
  }
 }
