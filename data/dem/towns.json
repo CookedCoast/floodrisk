@@ -577,6 +577,11 @@
    "town": "Prospect",
    "built": "2026-11-04",
    "tiles": 144
+  },
+  "putnam": {
+   "town": "Putnam",
+   "built": "2026-11-04",
+   "tiles": 203
   }
  }
 }
