@@ -136,6 +136,21 @@ th.sort[aria-sort] .ar{opacity:1}
 }
 @media (prefers-reduced-motion:reduce){.pbar>i{transition:none}}
 
+/* ---------- splash (matches SECOG Parcel Viewer) ---------- */
+#splashScreen{position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#20326e 0%,#07265c 100%);display:flex;align-items:center;justify-content:center;padding:20px max(16px,env(safe-area-inset-right,0px)) 20px max(16px,env(safe-area-inset-left,0px));overflow-y:auto}
+.splash-card{background:var(--panel);color:var(--ink);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.35);max-width:520px;width:100%;padding:30px 28px;text-align:center;border-top:5px solid var(--green);margin:auto}
+.splash-logo{display:block;width:210px;max-width:70%;height:auto;margin:0 auto 18px;background:#fff;border-radius:6px;padding:6px 8px}
+.splash-card h1{font-size:1.4rem;margin:0 0 6px;color:var(--head)}
+.splash-lede{margin:0 0 16px;color:var(--ink-2);font-size:.95rem}
+.splash-steps{text-align:left;display:grid;gap:8px;margin:0 0 16px;padding:0;list-style:none;counter-reset:st}
+.splash-steps li{display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start;font-size:.9rem;color:var(--ink-2)}
+.splash-steps li::before{counter-increment:st;content:counter(st);display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:.8rem}
+.splash-steps b{color:var(--ink)}
+.splash-disclaimer{text-align:left;max-height:190px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:18px;font-size:.82rem;line-height:1.55;color:var(--ink-2);background:var(--bg)}
+.splash-disclaimer p{margin:0 0 8px}.splash-disclaimer p:last-child{margin:0}
+#splashProceedBtn{width:100%;padding:12px 16px;font-size:.95rem}
+@media (max-width:600px){.splash-card{padding:22px 18px}.splash-disclaimer{max-height:38vh}}
+
 /* ---------- report ---------- */
 #report{position:fixed;inset:0;z-index:2000;background:#e9eceb;overflow-y:auto;display:none}
 #report.open{display:block}
@@ -189,6 +204,24 @@ th.sort[aria-sort] .ar{opacity:1}
 </style>
 </head>
 <body>
+<div id="splashScreen" role="dialog" aria-modal="true" aria-labelledby="splashTitle">
+  <div class="splash-card">
+    <img class="splash-logo" src="logo.svg" alt="Southeastern Connecticut Council of Governments (SECOG)">
+    <h1 id="splashTitle">Flood Risk &amp; Tax Base</h1>
+    <p class="splash-lede">See how sea level rise and inland flooding could affect property values and municipal tax revenue, parcel by parcel.</p>
+    <ol class="splash-steps">
+      <li><span><b>Pick a town</b> and select Analyze. The app gathers parcels, FEMA flood zones, lidar ground elevations and NOAA sea level rise projections. Large towns take a minute or two.</span></li>
+      <li><span><b>Choose a scenario and year</b> to see the added annual tax revenue at risk compared with today, in today's dollars.</span></li>
+      <li><span><b>Explore and export</b> with the map, the sortable parcel ledger, a CSV, or a printable report.</span></li>
+    </ol>
+    <div class="splash-disclaimer">
+      <p>This application is provided by the Southeastern Connecticut Council of Governments (SECOG) for general planning and screening purposes only.</p>
+      <p>Results are estimates built from public data (CT CAMA parcel data, FEMA flood maps, USGS lidar and NOAA projections) and simplified assumptions. They are not a flood insurance determination, an appraisal, an engineering study or a revenue forecast, and they do not reflect the official assessment of any property.</p>
+      <p>SECOG and its member municipalities make no warranties, express or implied, about the accuracy, completeness or suitability of this information for any particular purpose. Users assume full responsibility for any use of the information provided here.</p>
+    </div>
+    <button id="splashProceedBtn" class="primary" type="button">Click here to proceed</button>
+  </div>
+</div>
 <div class="app">
 <aside>
   <div class="brand">
@@ -370,6 +403,16 @@ function pointOn(g){
   return[r[0][0],r[0][1]];
 }
 function extraPoints(p,g){const b=p.bbox,out=[];for(const[cx,cy]of[[b[0],b[1]],[b[2],b[1]],[b[0],b[3]],[b[2],b[3]]]){const x=(p.pt[0]+cx)/2,y=(p.pt[1]+cy)/2;if(inGeom(x,y,g))out.push([x,y])}return out}
+/* compact geometry: Web Mercator metres relative to a town origin, stored in typed arrays */
+const R_E=6378137,PI_R=Math.PI*R_E;
+const merc=(lon,lat)=>[R_E*lon*Math.PI/180,R_E*Math.log(Math.tan(Math.PI/4+lat*Math.PI/360))];
+function compact(g,O){let n=0,rc=0;const ps=polysOf(g);for(const p of ps)for(const r of p){n+=r.length;rc++}
+  const xy=new Float32Array(n*2),rg=new Uint32Array(rc);let i=0,k=0,x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+  for(const p of ps)for(const r of p){for(const c of r){const m=merc(c[0],c[1]);const dx=m[0]-O[0],dy=m[1]-O[1];xy[2*i]=dx;xy[2*i+1]=dy;i++;
+    if(dx<x0)x0=dx;if(dx>x1)x1=dx;if(dy<y0)y0=dy;if(dy>y1)y1=dy}rg[k++]=i}
+  return{xy,rg,mb:new Float32Array([x0,y0,x1,y1])}}
+function inCompact(x,y,c){let ins=false,s=0;const xy=c.xy;for(let r=0;r<c.rg.length;r++){const e=c.rg[r];
+  for(let i=s,j=e-1;i<e;j=i++){const xi=xy[2*i],yi=xy[2*i+1],xj=xy[2*j],yj=xy[2*j+1];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))ins=!ins}s=e}return ins}
 function metersBetween(a,b){const k=Math.cos(a[1]*Math.PI/180)*111320;return Math.hypot((a[0]-b[0])*k,(a[1]-b[1])*110540)}
 
 /* ---------- reference data ---------- */
@@ -405,15 +448,19 @@ async function analyze(){
     const chunks=await pool(pages,4,async off=>{
       const j=await getJSON(SVC.parcels+"?where="+whereTown+`&outFields=${FIELDS}&orderByFields=OBJECTID&resultOffset=${off}&resultRecordCount=2000&outSR=4326&geometryPrecision=6&f=geojson`);
       done++;prog(.3*done/pages.length);return j.features||[]});
-    const parcels=[];
-    for(const f of chunks.flat()){if(!f.geometry)continue;const g=f.geometry,pt=pointOn(g);if(!pt)continue;const a=f.properties;
+    const parcels=[];let O=null;
+    for(const ch of chunks){for(const f of ch){if(!f.geometry)continue;const g=f.geometry,pt=pointOn(g);if(!pt)continue;const a=f.properties;
+      if(!O)O=merc(pt[0],pt[1]);
       const assessed=+a.Assessed_Total||0,aLand=+a.Assessed_Land||0;const aBldg=a.Assessed_Building!=null?+a.Assessed_Building:Math.max(0,assessed-aLand);
       const bldgAppr=(+a.Appraised_Building||0)+(+a.Appraised_Outbuilding||0)||aBldg/0.7;
       const use=String(a.State_Use||"");
-      parcels.push({g,pt,bbox:bboxOf(g),a,assessed,bldgAppr,use,useDesc:titleCase((a.State_Use_Description||"").replace(/\s+MDL-\d+$/,"").trim())||"Unknown",
-        exempt:/^9/.test(use)||assessed<=0,zone:null,elev:null,elevs:null,coastal:false})}
+      const p={pt,bbox:bboxOf(g),a,assessed,bldgAppr,use,useDesc:titleCase((a.State_Use_Description||"").replace(/\s+MDL-\d+$/,"").trim())||"Unknown",
+        exempt:/^9/.test(use)||assessed<=0,zone:null,elev:null,elevs:null,coastal:false,cls:"none"};
+      if(ptsPer>1)p.extra=extraPoints(p,g);
+      Object.assign(p,compact(g,O));parcels.push(p)}ch.length=0}
+    chunks.length=0;S.O=O;
     log(num(parcels.length)+" parcels with boundaries","ok");
-    S.parcels=parcels;
+    S.parcels=parcels;S.sel=null;
     let bb=[180,90,-180,-90];for(const p of parcels){bb=[Math.min(bb[0],p.bbox[0]),Math.min(bb[1],p.bbox[1]),Math.max(bb[2],p.bbox[2]),Math.max(bb[3],p.bbox[3])]}S.bb=bb;
 
     log("Querying FEMA flood zones…","act");
@@ -438,8 +485,9 @@ async function analyze(){
       const cAE=zones.filter(z=>z.kind==="A"&&z.bfe&&z.bfe>=7&&z.bfe<=18&&z.nearV).map(z=>z.bfe).sort((a,b)=>a-b);
       const vBFE=zones.filter(z=>z.kind==="V"&&z.bfe).map(z=>z.bfe).sort((a,b)=>a-b);
       S.coastBFE=cAE.length?cAE[Math.floor(cAE.length/2)]:(vBFE.length?vBFE[Math.floor(vBFE.length/2)]-2:11);
-      for(const p of parcels){if(p.zone&&p.zone.kind==="A"&&p.coastal&&p.zone.bfe&&p.zone.bfe>=7&&p.zone.bfe<=18&&p.zone.nearV)p.zone=Object.assign({},p.zone,{coastalAE:true})}
+      for(const p of parcels){if(p.zone&&p.zone.kind==="A"&&p.coastal&&p.zone.bfe&&p.zone.bfe>=7&&p.zone.bfe<=18&&p.zone.nearV){const z=p.zone;p.zone={id:z.id,zone:z.zone,kind:z.kind,bfe:z.bfe,depth:z.depth,nearV:z.nearV,coastalAE:true}}}
     }
+    for(const z of zones){Object.assign(z,compact(z.g,O));delete z.g}
     const cx=(bb[0]+bb[2])/2;const st=Math.abs(cx-SLR_FALLBACK["8467150"].lon)<Math.abs(cx-SLR_FALLBACK["8461490"].lon)?"8467150":"8461490";
     S.station=st;S.slr=await loadSLR(st);
     const a=SLR_FALLBACK["8467150"],b=SLR_FALLBACK["8461490"];
@@ -449,7 +497,7 @@ async function analyze(){
 
     const need=parcels.filter(p=>p.zone||p.coastal);
     log("Sampling lidar ground elevation for "+num(need.length)+" parcels…","act");
-    const pts=[];for(const p of need){const list=[p.pt];if(ptsPer>1)list.push(...extraPoints(p,p.g));p.elevIdx=[];for(const q of list){p.elevIdx.push(pts.length);pts.push(q)}}
+    const pts=[];for(const p of need){const list=[p.pt];if(p.extra)list.push(...p.extra);p.elevIdx=[];for(const q of list){p.elevIdx.push(pts.length);pts.push(q)}}
     const vals=new Array(pts.length).fill(null);const B=500;const batches=[];for(let i=0;i<pts.length;i+=B)batches.push(i);let eb=0,failed=0;
     await pool(batches,5,async start=>{
       const chunk=pts.slice(start,start+B);
@@ -459,7 +507,7 @@ async function analyze(){
       catch(e){failed++}
       eb++;prog(.45+.5*eb/batches.length)});
     if(failed)log(failed+" elevation request(s) failed; those parcels are left out","e");
-    let got=0;for(const p of need){p.elevs=p.elevIdx.map(i=>vals[i]).filter(v=>v!==null);p.elev=vals[p.elevIdx[0]];if(p.elev===null&&p.elevs.length)p.elev=p.elevs[0];if(p.elev!==null)got++}
+    let got=0;for(const p of need){const es=p.elevIdx.map(i=>vals[i]).filter(v=>v!==null);p.elev=vals[p.elevIdx[0]];if(p.elev===null&&es.length)p.elev=es[0];p.elevs=es.length>1?Float32Array.from(es):null;delete p.elevIdx;delete p.extra;if(p.elev!==null)got++}
     log("Elevation found for "+num(got)+" of "+num(need.length)+" parcels","ok");prog(1);
     log("Done. Change the scenario and year to compare.","ok");
     buildMap();recompute();$("csv").disabled=false;$("rep").disabled=false;
@@ -497,8 +545,8 @@ function parcelState(p,scen,year,pr){
   const uplift=pr.up*RIVER_MULT[scen]*Math.max(0,Math.min(1,(year-2020)/80));
   let tideShare=0,cDepth=-99,rDepth=-99;
   if(S.coastal&&(p.coastal||(p.zone&&(p.zone.kind==="V"||p.zone.coastalAE)))){
-    const wl=pr.mhhw+slrAbs,wl0=pr.mhhw+slr0;const es=p.elevs&&p.elevs.length?p.elevs:[p.elev];
-    const now=es.filter(e=>e<wl).length/es.length,today=es.filter(e=>e<wl0).length/es.length;tideShare=Math.max(0,now-today);
+    const wl=pr.mhhw+slrAbs,wl0=pr.mhhw+slr0;const es=p.elevs||[p.elev];
+    let nN=0,n0=0;for(let i=0;i<es.length;i++){if(es[i]<wl)nN++;if(es[i]<wl0)n0++}const now=nN/es.length,today=n0/es.length;tideShare=Math.max(0,now-today);
     const base=(p.zone&&(p.zone.kind==="V"||p.zone.coastalAE)&&p.zone.bfe)?p.zone.bfe:pr.cbfe;
     if(base!=null)cDepth=base+dSLR-p.elev;
   }
@@ -546,7 +594,7 @@ function recompute(){
   const pr=P();
   $("slrval").textContent=`Sea level +${slrFt(S.scen,S.year).toFixed(2)} ft since 2005`;
   const r=evalAll(S.scen,S.year,pr,true);S.results=r;
-  S.traj=SCEN.map((_,i)=>trajectory(i,pr));
+  const tk=JSON.stringify(pr)+"|"+S.townName+"|"+S.parcels.length;if(S.trajKey!==tk){S.traj=SCEN.map((_,i)=>trajectory(i,pr));S.trajKey=tk}
   const L=levy(pr);S.levy=L;S.npv=npvFrom(S.traj[S.scen],pr);
   $("mtitle").textContent=S.townName;$("msub").textContent=`${SCEN[S.scen]} scenario, ${S.year}. Results show the change from today's flood exposure.`;
   $("k_tax").textContent=money(r.tot);$("k_tax_s").textContent=`Today's dollars · ${money(r.base)} already at risk now`;
@@ -599,34 +647,70 @@ function drawTable(r){
   $("ledgernote").textContent=all.length>rows.length?`Showing the first ${num(rows.length)} of ${num(all.length)} exposed parcels in this sort order. The CSV export has all of them.`:all.length?`${num(all.length)} exposed parcels.`:"";
   if(!rows.length){tb.innerHTML=`<tr><td colspan="10" class="empty">No parcels exposed in this scenario and year.</td></tr>`;return}
   tb.innerHTML=rows.map((x,i)=>`<tr data-i="${i}" tabindex="0"><td>${esc(x.p.a.Parcel_ID)}</td><td>${esc(x.p.a.Location)}</td><td>${esc(x.p.useDesc)}</td><td class="n">${money(x.p.assessed)}</td><td class="n">${x.p.elev.toFixed(1)}</td><td>${hazardPill(x.s1)}</td><td class="n">${x.s1.depth>0?x.s1.depth.toFixed(1):"–"}</td><td class="n">${x.s1.tideShare>0?Math.round(x.s1.tideShare*100)+"%":"–"}</td><td class="n">${money(x.m1.dmg)}</td><td class="n"><b>${money(x.d)}</b></td></tr>`).join("");
-  tb.querySelectorAll("tr").forEach(tr=>{const go=()=>{const p=rows[+tr.dataset.i].p;if(S.map&&p.lyr){S.map.fitBounds(p.lyr.getBounds(),{maxZoom:18});p.lyr.openPopup()}$("map").scrollIntoView({behavior:"smooth",block:"center"})};tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter")go()}});
+  tb.querySelectorAll("tr").forEach(tr=>{const go=()=>{const p=rows[+tr.dataset.i].p;if(S.map){S.map.fitBounds([[p.bbox[1],p.bbox[0]],[p.bbox[3],p.bbox[2]]],{maxZoom:18,animate:false});openParcel(p)}$("map").scrollIntoView({behavior:"smooth",block:"center"})};tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter")go()}});
 }
 
 /* ---------- map ---------- */
 function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+/* One canvas per layer, drawn straight from the typed arrays: no per-parcel Leaflet objects. */
+const CanvasLayer=window.L?L.Layer.extend({
+  initialize(items,styleOf){this._items=items;this._styleOf=styleOf},
+  onAdd(map){this._map=map;this._c=L.DomUtil.create("canvas","leaflet-zoom-hide");this._c.style.pointerEvents="none";
+    map.getPane("overlayPane").appendChild(this._c);map.on("moveend zoomend resize viewreset",this.redraw,this);map.on("zoomstart",this._hide,this);this.redraw()},
+  onRemove(map){this._c.remove();map.off("moveend zoomend resize viewreset",this.redraw,this);map.off("zoomstart",this._hide,this);this._map=null},
+  _hide(){this._c.style.visibility="hidden"},
+  redraw(){const map=this._map;if(!map)return;const size=map.getSize(),dpr=Math.min(2,window.devicePixelRatio||1),c=this._c;
+    c.width=Math.round(size.x*dpr);c.height=Math.round(size.y*dpr);c.style.width=size.x+"px";c.style.height=size.y+"px";
+    L.DomUtil.setPosition(c,map.containerPointToLayerPoint([0,0]));c.style.visibility="";
+    const z=map.getZoom(),k=256*Math.pow(2,z)/(2*PI_R),tl=map.project(map.containerPointToLatLng([0,0]),z);
+    const ox=k*(S.O[0]+PI_R)-tl.x,oy=k*(PI_R-S.O[1])-tl.y;
+    const ctx=c.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,size.x,size.y);
+    const vx0=-ox/k,vx1=(size.x-ox)/k,vy0=(oy-size.y)/k,vy1=oy/k;const groups=new Map();
+    for(const it of this._items){const b=it.mb;if(b[2]<vx0||b[0]>vx1||b[3]<vy0||b[1]>vy1)continue;const st=this._styleOf(it,z);if(!st)continue;
+      let g=groups.get(st.key);if(!g){g={st,items:[]};groups.set(st.key,g)}g.items.push(it)}
+    for(const{st,items}of[...groups.values()].sort((a,b)=>a.st.z-b.st.z)){ctx.beginPath();
+      for(const it of items){const xy=it.xy,rg=it.rg,b=it.mb;
+        if((b[2]-b[0])*k<1.2&&(b[3]-b[1])*k<1.2){ctx.rect(ox+k*b[0],oy-k*b[3],1.2,1.2);continue}
+        let s0=0;for(let r=0;r<rg.length;r++){const e=rg[r];let lx=ox+k*xy[2*s0],ly=oy-k*xy[2*s0+1];ctx.moveTo(lx,ly);
+          for(let i=s0+1;i<e;i++){const x=ox+k*xy[2*i],y=oy-k*xy[2*i+1];if(i<e-1&&Math.abs(x-lx)<.6&&Math.abs(y-ly)<.6)continue;ctx.lineTo(x,y);lx=x;ly=y}
+          ctx.closePath();s0=e}}
+      if(st.fill){ctx.globalAlpha=st.fa;ctx.fillStyle=st.fill;ctx.fill()}
+      if(st.stroke){ctx.globalAlpha=st.sa;ctx.strokeStyle=st.stroke;ctx.lineWidth=st.sw;ctx.stroke()}}
+    ctx.globalAlpha=1}
+}):null;
+function parcelStyle(p,z){
+  if(p===S.sel)return{key:"sel",z:9,fill:null,stroke:"#00e5ff",sa:1,sw:3};
+  const c=(S.colors&&S.colors[p.cls])||"#9aa3ab";const line=z>=15;
+  return p.cls==="none"?{key:"none",z:0,fill:c,fa:.12,stroke:line?"#6b7280":null,sa:.5,sw:.4}
+    :{key:p.cls,z:1+["d0","d1","d3","chronic"].indexOf(p.cls),fill:c,fa:.75,stroke:line?"#ffffff":null,sa:.6,sw:.4}}
+function zoneStyle(zn){return zn.kind==="X02"?{key:"x02",z:0,fill:"#1f73ae",fa:.04,stroke:"#1f73ae",sa:.35,sw:.6}:{key:"sfha",z:1,fill:"#1f73ae",fa:.1,stroke:"#1f73ae",sa:.5,sw:.6}}
 function buildMap(){
   if(!window.L){$("mapnote").textContent="The map library did not load; results are still shown below.";return}
-  if(!S.map){S.map=L.map("map",{preferCanvas:true});
+  if(!S.map){S.map=L.map("map");
     const gray=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,maxNativeZoom:16,attribution:"Esri, HERE, Garmin, © OpenStreetMap contributors"}).addTo(S.map);
     const imagery=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri, Maxar, Earthstar Geographics"});
-    S.ctrl=L.control.layers({"Light gray":gray,"Imagery":imagery},{},{collapsed:true}).addTo(S.map)}
+    S.ctrl=L.control.layers({"Light gray":gray,"Imagery":imagery},{},{collapsed:true}).addTo(S.map);
+    S.map.on("click",e=>{if(!S.layer||!S.map.hasLayer(S.layer))return;const m=merc(e.latlng.lng,e.latlng.lat),x=m[0]-S.O[0],y=m[1]-S.O[1];
+      let hit=null,best=Infinity;for(const p of S.parcels){const b=p.mb;if(x<b[0]||x>b[2]||y<b[1]||y>b[3])continue;const a=(b[2]-b[0])*(b[3]-b[1]);if(a<best&&inCompact(x,y,p)){best=a;hit=p}}
+      if(hit)openParcel(hit,e.latlng)});
+    S.map.on("popupclose",()=>{if(S.sel){S.sel=null;S.layer&&S.layer.redraw()}})}
   if(S.layer){S.ctrl.removeLayer(S.layer);S.layer.remove()}if(S.zoneLayer){S.ctrl.removeLayer(S.zoneLayer);S.zoneLayer.remove()}
-  const rend=L.canvas({padding:.3});
-  S.zoneLayer=L.layerGroup(S.zones.map(z=>L.geoJSON(z.g,{renderer:rend,interactive:false,style:{color:"#1f73ae",weight:.6,fillColor:"#1f73ae",fillOpacity:z.kind==="X02"?0.04:0.1,opacity:.5}}))).addTo(S.map);
-  S.layer=L.layerGroup().addTo(S.map);
-  for(const p of S.parcels){p.lyr=L.geoJSON(p.g,{renderer:rend,style:{weight:.4}});p.lyr.bindPopup(()=>popup(p));S.layer.addLayer(p.lyr)}
+  S.zoneLayer=new CanvasLayer(S.zones,zoneStyle).addTo(S.map);
+  S.layer=new CanvasLayer(S.parcels,parcelStyle).addTo(S.map);
   S.ctrl.addOverlay(S.zoneLayer,"FEMA flood zones");S.ctrl.addOverlay(S.layer,"Parcels");
   S.map.fitBounds([[S.bb[1],S.bb[0]],[S.bb[3],S.bb[2]]]);
   $("mapnote").textContent="Color shows exposure in the selected scenario and year. Select a parcel for details.";
-  setTimeout(()=>S.map.invalidateSize(),50);
+  setTimeout(()=>{S.map.invalidateSize();S.layer.redraw();S.zoneLayer.redraw()},50);
 }
+function openParcel(p,ll){if(!S.map)return;S.sel=p;S.layer.redraw();
+  L.popup({maxWidth:320}).setLatLng(ll||[p.pt[1],p.pt[0]]).setContent(popup(p)).openOn(S.map)}
 function exposureClass(p,pr){const s=parcelState(p,S.scen,S.year,pr);if(!s)return"none";
   if(s.tideShare>0||(S.coastal&&(p.coastal||(p.zone&&(p.zone.kind==="V"||p.zone.coastalAE)))&&p.elev<pr.mhhw+slrFt(S.scen,S.year)))return"chronic";
   if(s.depth>3)return"d3";if(s.depth>1)return"d1";if(s.depth>0)return"d0";return"none"}
 function styleMap(){
-  if(!S.layer)return;const pr=P();const c={chronic:cssVar("--chronic"),d3:cssVar("--d3"),d1:cssVar("--d1"),d0:cssVar("--d0"),none:"#9aa3ab"};
-  for(const p of S.parcels){if(!p.lyr)continue;const k=exposureClass(p,pr);
-    p.lyr.setStyle({color:"#6b7280",weight:.3,opacity:.5,fillColor:c[k],fillOpacity:k==="none"?.12:.75})}
+  const pr=P();S.colors={chronic:cssVar("--chronic"),d3:cssVar("--d3"),d1:cssVar("--d1"),d0:cssVar("--d0"),none:"#9aa3ab"};
+  for(const p of S.parcels)p.cls=exposureClass(p,pr);
+  if(S.layer)S.layer.redraw();
 }
 function popup(p){const pr=P();const s=parcelState(p,S.scen,S.year,pr),s0=parcelState(p,S.scen,2020,pr);const m=parcelMoney(p,s,pr),m0=parcelMoney(p,s0,pr);
   const z=p.zone?`${esc(p.zone.zone)}${p.zone.bfe!=null?" · BFE "+p.zone.bfe+" ft":""}${p.zone.coastalAE?" (coastal)":""}`:"Outside mapped zone";
@@ -639,18 +723,17 @@ function popup(p){const pr=P();const s=parcelState(p,S.scen,S.year,pr),s0=parcel
 
 /* ---------- report ---------- */
 function reportMap(pr){
-  const bb=S.bb;const k=Math.cos((bb[1]+bb[3])/2*Math.PI/180);
-  const W=1000,pad=12;let sx=(W-2*pad)/((bb[2]-bb[0])*k||1);let H=Math.round((bb[3]-bb[1])*sx+2*pad);if(H>520)H=520;
-  const sc=Math.min(sx,(H-2*pad)/(bb[3]-bb[1]||1));const ox=(W-2*pad-(bb[2]-bb[0])*k*sc)/2;
-  const X=x=>pad+ox+(x-bb[0])*k*sc,Y=y=>H-pad-(y-bb[1])*sc;
-  const ring=r=>{let d="",lx=null,ly=null;r.forEach((p,i)=>{const x=X(p[0]),y=Y(p[1]);if(i&&Math.abs(x-lx)<.6&&Math.abs(y-ly)<.6&&i<r.length-1)return;d+=(d?"L":"M")+x.toFixed(1)+" "+y.toFixed(1);lx=x;ly=y});return d+"Z"};
-  const path=g=>polysOf(g).map(p=>p.map(ring).join("")).join("");
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;for(const p of S.parcels){const b=p.mb;if(b[0]<x0)x0=b[0];if(b[1]<y0)y0=b[1];if(b[2]>x1)x1=b[2];if(b[3]>y1)y1=b[3]}
+  const W=1000,pad=12;const sx=(W-2*pad)/((x1-x0)||1);let H=Math.round((y1-y0)*sx+2*pad);if(H>520)H=520;
+  const sc=Math.min(sx,(H-2*pad)/((y1-y0)||1)),ox=(W-2*pad-(x1-x0)*sc)/2;
+  const path=c=>{const xy=c.xy,rg=c.rg;let d="",s0=0;for(let r=0;r<rg.length;r++){const e=rg[r];let lx=null,ly=null;
+    for(let i=s0;i<e;i++){const x=pad+ox+(xy[2*i]-x0)*sc,y=H-pad-(xy[2*i+1]-y0)*sc;if(i>s0&&i<e-1&&Math.abs(x-lx)<.6&&Math.abs(y-ly)<.6)continue;d+=(i===s0?"M":"L")+x.toFixed(1)+" "+y.toFixed(1);lx=x;ly=y}d+="Z";s0=e}return d};
   let out=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="#f7f9f8"/>`;
-  out+=`<path d="${S.zones.filter(z=>z.kind!=="X02").map(z=>path(z.g)).join("")}" fill="${PRINT.zone}" fill-opacity=".12" stroke="none" fill-rule="nonzero"/>`;
-  const groups={none:"",d0:"",d1:"",d3:"",chronic:""};
-  for(const p of S.parcels){groups[exposureClass(p,pr)]+=path(p.g)}
-  out+=`<path d="${groups.none}" fill="${PRINT.none}" stroke="#c4c9ce" stroke-width=".25"/>`;
-  for(const k of["d0","d1","d3","chronic"])if(groups[k])out+=`<path d="${groups[k]}" fill="${PRINT[k]}" stroke="#ffffff" stroke-width=".25"/>`;
+  out+=`<path d="${S.zones.filter(z=>z.kind!=="X02").map(path).join("")}" fill="${PRINT.zone}" fill-opacity=".12" stroke="none"/>`;
+  const groups={none:[],d0:[],d1:[],d3:[],chronic:[]};
+  for(const p of S.parcels)groups[p.cls||"none"].push(path(p));
+  out+=`<path d="${groups.none.join("")}" fill="${PRINT.none}" stroke="#c4c9ce" stroke-width=".25"/>`;
+  for(const k of["d0","d1","d3","chronic"])if(groups[k].length)out+=`<path d="${groups[k].join("")}" fill="${PRINT[k]}" stroke="#ffffff" stroke-width=".25"/>`;
   return out+"</svg>";
 }
 function buildReport(){
@@ -737,6 +820,8 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")$("report").classLis
 let deb;document.querySelectorAll(".params input").forEach(i=>i.addEventListener("input",()=>{clearTimeout(deb);deb=setTimeout(recompute,250)}));
 setupSort();
 loadTowns();
+$("splashProceedBtn").onclick=()=>{$("splashScreen").hidden=true;$("town").focus()};
+$("splashProceedBtn").focus();
 </script>
 </body>
 </html>
