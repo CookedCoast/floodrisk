@@ -420,6 +420,66 @@
    "built": "2026-11-04",
    "parcels": 3153,
    "points": 3153
+  },
+  "lebanon": {
+   "town": "Lebanon",
+   "built": "2026-11-04",
+   "parcels": 3909,
+   "points": 3909
+  },
+  "ledyard": {
+   "town": "Ledyard",
+   "built": "2026-11-04",
+   "parcels": 6855,
+   "points": 6324
+  },
+  "lisbon": {
+   "town": "Lisbon",
+   "built": "2026-11-04",
+   "parcels": 1926,
+   "points": 1926
+  },
+  "litchfield": {
+   "town": "Litchfield",
+   "built": "2026-11-04",
+   "parcels": 4585,
+   "points": 4576
+  },
+  "lyme": {
+   "town": "Lyme",
+   "built": "2026-11-04",
+   "parcels": 1738,
+   "points": 1738
+  },
+  "madison": {
+   "town": "Madison",
+   "built": "2026-11-04",
+   "parcels": 8598,
+   "points": 8598
+  },
+  "manchester": {
+   "town": "Manchester",
+   "built": "2026-11-04",
+   "parcels": 18865,
+   "points": 18865
+  },
+  "mansfield": {
+   "town": "Mansfield",
+   "built": "2026-11-04",
+   "parcels": 5234,
+   "points": 5234
+  },
+  "marlborough": {
+   "town": "Marlborough",
+   "built": "2026-11-04",
+   "parcels": 2730,
+   "points": 2730
+  },
+  "meriden": {
+   "town": "Meriden",
+   "built": "2026-11-04",
+   "parcels": 19657,
+   "points": 19140
   }
  }
 }
