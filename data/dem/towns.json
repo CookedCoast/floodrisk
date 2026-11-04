@@ -647,6 +647,11 @@
    "town": "South Windsor",
    "built": "2026-11-04",
    "tiles": 420
+  },
+  "southbury": {
+   "town": "Southbury",
+   "built": "2026-11-04",
+   "tiles": 191
   }
  }
 }
