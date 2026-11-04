@@ -52,13 +52,63 @@ async function fetchDEM(ext, w, h, pr) {
   const c = document.createElement("canvas"); c.width = bm.width; c.height = bm.height;
   const ctx = c.getContext("2d"); ctx.drawImage(bm, 0, 0);
   const px = ctx.getImageData(0, 0, c.width, c.height).data;
-  const n = c.width * c.height, v = new Uint8Array(n);
-  for (let i = 0; i < n; i++) v[i] = px[4 * i + 3] > 128 ? px[4 * i] : 0;
+  const n = c.width * c.height, e = new Float32Array(n), loFt = loM * FT_M, stepFt = stepM * FT_M;
+  for (let i = 0; i < n; i++) e[i] = px[4 * i + 3] > 128 && px[4 * i] ? loFt + (px[4 * i] - 0.5) * stepFt : NaN;
   const me = meta.extent || { xmin: ext[0], ymin: ext[1], xmax: ext[2], ymax: ext[3] };
-  const grid = { w: c.width, h: c.height, ext: [me.xmin, me.ymin, me.xmax, me.ymax], v, loFt: loM * FT_M, stepFt: stepM * FT_M };
+  const grid = { w: c.width, h: c.height, ext: [me.xmin, me.ymin, me.xmax, me.ymax], e, src: "live" };
   rasterizeZones(grid, pr);
   return grid;
 }
+/* ---------- saved elevation tiles (built by the "Build flood elevation tiles" GitHub Action) ---------- */
+const TS15 = (2 * Math.PI * 6378137);
+let DEM_TOWNS = null;
+async function demTowns() {
+  if (DEM_TOWNS) return DEM_TOWNS;
+  try { const r = await fetch("data/dem/towns.json", { cache: "no-cache" }); DEM_TOWNS = r.ok ? (await r.json()).towns || {} : {}; } catch (e) { DEM_TOWNS = {}; }
+  return DEM_TOWNS;
+}
+async function hasTiles() { const t = await demTowns(); return !!(S.townRaw && t[townSlug(S.townRaw)]); }
+function tileRange(ext, z) {
+  const ts = TS15 / 2 ** z, O = TS15 / 2;
+  return [Math.floor((ext[0] + O) / ts), Math.floor((O - ext[3]) / ts), Math.floor((ext[2] + O - 1e-6) / ts), Math.floor((O - ext[1] - 1e-6) / ts)];
+}
+const tileCount = (ext, z) => { const r = tileRange(ext, z); return (r[2] - r[0] + 1) * (r[3] - r[1] + 1); };
+async function tileValues(z, x, y) {
+  try {
+    const r = await fetch(`data/dem/${z}/${x}/${y}.png`);
+    if (!r.ok) return null;
+    const bm = await createImageBitmap(await r.blob(), { premultiplyAlpha: "none", colorSpaceConversion: "none" });
+    const c = document.createElement("canvas"); c.width = c.height = 256;
+    const ctx = c.getContext("2d", { willReadFrequently: true }); ctx.drawImage(bm, 0, 0);
+    const d = ctx.getImageData(0, 0, 256, 256).data, e = new Float32Array(65536);
+    for (let i = 0; i < 65536; i++) e[i] = d[4 * i + 3] > 0 ? (((d[4 * i] << 8) | d[4 * i + 1]) / 20 - 100) * FT_M : NaN;
+    return e;
+  } catch (e) { return null; }
+}
+async function tileGrid(ext, z) {
+  const [x0, y0, x1, y1] = tileRange(ext, z), nx = x1 - x0 + 1, ny = y1 - y0 + 1, w = nx * 256, h = ny * 256;
+  const e = new Float32Array(w * h).fill(NaN), jobs = [];
+  for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) jobs.push([tx, ty]);
+  await pool(jobs, 8, async ([tx, ty]) => {
+    const v = await tileValues(z, tx, ty); if (!v) return;
+    const ox = (tx - x0) * 256, oy = (ty - y0) * 256;
+    for (let r = 0; r < 256; r++) e.set(v.subarray(r * 256, r * 256 + 256), (oy + r) * w + ox);
+  });
+  const ts = TS15 / 2 ** z, O = TS15 / 2;
+  return { w, h, ext: [-O + x0 * ts, O - (y1 + 1) * ts, -O + (x1 + 1) * ts, O - y0 * ts], e, src: "tiles", z };
+}
+/* Elevation grid for an extent: saved tiles when this town has them, else the live USGS service. */
+async function elevationGrid(ext, w, h, pr, maxTiles, zWant) {
+  if (await hasTiles()) {
+    let z = Math.max(12, Math.min(15, zWant));
+    while (z > 12 && tileCount(ext, z) > maxTiles) z--;
+    const g = await tileGrid(ext, z);
+    rasterizeZones(g, pr);
+    return g;
+  }
+  return fetchDEM(ext, w, h, pr);
+}
+
 /* FEMA zone index and coastal-reach mask on the DEM grid. */
 function rasterizeZones(g, pr) {
   const res = (g.ext[2] - g.ext[0]) / g.w;
@@ -97,11 +147,12 @@ function classify(g, scen, year, pr, out) {
     else if (z.kind === "A") { if (z.bfe != null) zWL[id] = z.bfe + uplift; else zD[id] = (z.depth != null && /AO/.test(z.zone) ? z.depth : pr.adepth) + uplift; }
     else zD[id] = uplift - pr.x02;
   });
-  const cw = (pr.cbfe || 0) + dSLR, n = g.w * g.h, lo = g.loFt, st = g.stepFt, v = g.v, zn = g.zone, rc = g.reach;
+  const cw = (pr.cbfe || 0) + dSLR, n = g.w * g.h, E = g.e, zn = g.zone, rc = g.reach;
   for (let i = 0; i < n; i++) {
     out[i] = 0;
-    if (!v[i]) continue;
-    const e = lo + (v[i] - 0.5) * st, id = zn[i];
+    const e = E[i];
+    if (e !== e) continue;
+    const id = zn[i];
     const coastal = rc && (rc[i] || zC[id]);
     if (coastal) { if (e < wl0) continue; if (e < wl) { out[i] = 1; continue; } }
     let d = -99;
@@ -128,19 +179,23 @@ const toLatLng = (x, y) => [(2 * Math.atan(Math.exp(y / 6378137)) - Math.PI / 2)
 function floodReset() {
   if (F.overlay && S.map) { S.ctrl && S.ctrl.removeLayer(F.overlay); F.overlay.remove(); }
   F.overlay = null; F.view = null; F.town = null; F.acres = null; F.acresKey = null; stopPlay();
+  floodWire();
+}
+function floodWire() {
   if (S.map && !F.wired) { S.map.on("moveend", () => { clearTimeout(F.timer); F.fails = 0; F.timer = setTimeout(floodFetchView, 350); }); F.wired = true; }
 }
 async function floodFetchView() {
   if (!S.map || !S.parcels.length || !S.slr) return;
+  floodWire();
   if (F.overlay && !S.map.hasLayer(F.overlay) && F.view) return;
   const b = S.map.getBounds(), sz = S.map.getSize();
   const sw = S.map.options.crs.project(b.getSouthWest()), ne = S.map.options.crs.project(b.getNorthEast());
   const scale = Math.min(1, 1600 / Math.max(sz.x, sz.y));
   const w = Math.max(64, Math.round(sz.x * scale)), h = Math.max(64, Math.round(sz.y * scale));
   const id = ++F.req;
-  floodNote("Loading flood depth for this view…");
+  floodNote((await hasTiles()) ? "" : "Loading flood depth for this view from USGS…");
   try {
-    const g = await fetchDEM([sw.x, sw.y, ne.x, ne.y], w, h, P());
+    const g = await elevationGrid([sw.x, sw.y, ne.x, ne.y], w, h, P(), 48, Math.round(S.map.getZoom()));
     if (id !== F.req) return;
     F.view = g; F.fails = 0; floodRender(); floodNote("");
   } catch (e) {
@@ -172,7 +227,7 @@ async function floodTownGrid() {
   const ext = [x0 + S.O[0], y0 + S.O[1], x1 + S.O[0], y1 + S.O[1]];
   const k = 1200 / Math.max(ext[2] - ext[0], ext[3] - ext[1]);
   const w = Math.max(64, Math.round((ext[2] - ext[0]) * k)), h = Math.max(64, Math.round((ext[3] - ext[1]) * k));
-  const g = await fetchDEM(ext, w, h, pr);
+  const g = await elevationGrid(ext, w, h, pr, 160, 14);
   if (!g) return null;
   // parcel-land mask: only flooded land on parcels counts toward acres
   const res = (g.ext[2] - g.ext[0]) / g.w, c = document.createElement("canvas"); c.width = g.w; c.height = g.h;

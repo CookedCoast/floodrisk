@@ -467,7 +467,7 @@ function slrFt(scen,year){const s=S.slr[SCEN[scen]];let i=SLR_YEARS.findIndex(y=
 /* ---------- pipeline ---------- */
 async function analyze(){
   const town=$("town").value;$("run").disabled=true;$("rep").disabled=true;$("log").innerHTML="";firstLog=false;prog(0);
-  S.townName=prettyTown(town);const ptsPer=+$("p_pts").value,buffer=+$("p_buf").value||1500;
+  S.townName=prettyTown(town);S.townRaw=town;const ptsPer=+$("p_pts").value,buffer=+$("p_buf").value||1500;
   const whereTown=encodeURIComponent(`Town_Name='${town.replace(/'/g,"''")}'`);
   try{
     log("Counting parcels in "+S.townName+"…","act");
