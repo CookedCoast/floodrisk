@@ -1,0 +1,65 @@
+{
+ "source": "USGS 3DEP 1 m lidar (ImageServer getSamples, bilinear), feet NAVD88 x10, at the geo.js pointOn point of each parcel in the CT CAMA and Parcel Layer",
+ "towns": {
+  "andover": {
+   "town": "Andover",
+   "built": "2026-11-04",
+   "parcels": 1692,
+   "points": 1692
+  },
+  "ansonia": {
+   "town": "Ansonia",
+   "built": "2026-11-04",
+   "parcels": 5784,
+   "points": 5784
+  },
+  "ashford": {
+   "town": "Ashford",
+   "built": "2026-11-04",
+   "parcels": 2392,
+   "points": 2392
+  },
+  "avon": {
+   "town": "Avon",
+   "built": "2026-11-04",
+   "parcels": 7736,
+   "points": 7736
+  },
+  "barkhamsted": {
+   "town": "Barkhamsted",
+   "built": "2026-11-04",
+   "parcels": 2004,
+   "points": 2004
+  },
+  "beacon-falls": {
+   "town": "Beacon Falls",
+   "built": "2026-11-04",
+   "parcels": 2835,
+   "points": 2765
+  },
+  "berlin": {
+   "town": "Berlin",
+   "built": "2026-11-04",
+   "parcels": 9100,
+   "points": 8954
+  },
+  "bethany": {
+   "town": "Bethany",
+   "built": "2026-11-04",
+   "parcels": 2465,
+   "points": 2438
+  },
+  "bethel": {
+   "town": "Bethel",
+   "built": "2026-11-04",
+   "parcels": 7828,
+   "points": 7828
+  },
+  "bethlehem": {
+   "town": "Bethlehem",
+   "built": "2026-11-04",
+   "parcels": 1823,
+   "points": 1823
+  }
+ }
+}
