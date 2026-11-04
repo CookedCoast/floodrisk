@@ -75,6 +75,16 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .pbar{height:5px;background:var(--line);border-radius:3px;overflow:hidden}
 .pbar>i{display:block;height:100%;width:0;background:var(--green);transition:width .2s}
 details.sec summary{cursor:pointer;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--head);font-weight:700}
+.info{all:unset;box-sizing:border-box;display:inline-grid;place-items:center;width:18px;height:18px;margin-left:6px;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent);font:700 11px/1 var(--font);cursor:pointer;vertical-align:1px;flex:none}
+.info:hover,.info[aria-expanded=true]{background:var(--accent);color:var(--accent-ink)}
+.info:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pop{grid-column:1/-1;position:relative;background:var(--panel);border:1px solid var(--line-2);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 12px;font-size:.84rem;line-height:1.5;color:var(--ink-2);box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.pop b{display:block;color:var(--ink);font-size:.86rem;margin-bottom:2px}
+.pop p{margin:4px 0 0}
+.pop .src{font-size:.78rem;color:var(--muted)}
+.sec>.pop{margin-top:-2px}
+#l_year{display:flex;align-items:center}
+.chk .info{margin-left:auto}
 .params{display:grid;grid-template-columns:1fr 96px;gap:8px 10px;align-items:center;font-size:.86rem}
 .params input,.params select{padding:5px 7px}
 .params .hint{grid-column:1/-1;font-size:.8rem;color:var(--muted);margin-top:-4px}
@@ -261,10 +271,10 @@ th.sort[aria-sort] .ar{opacity:1}
   </div>
 
   <div class="sec">
-    <h2>Scenario</h2>
+    <h2 id="h_scen">Scenario</h2>
     <div class="seg" id="scen" role="group" aria-label="NOAA 2022 sea level rise scenario"></div>
     <div class="note" id="gauge">NOAA 2022 Interagency scenarios. Gauge chosen after analysis.</div>
-    <label class="f" for="year">Planning year</label>
+    <label class="f" for="year" id="l_year">Planning year</label>
     <div class="row" style="justify-content:space-between"><span class="yearval" id="yearval">2050</span><span class="note" id="slrval" style="flex:0 0 auto;text-align:right">Sea level rise —</span></div>
     <input type="range" id="year" min="2030" max="2100" step="10" value="2050" aria-label="Planning year">
     <button type="button" id="play" aria-pressed="false" disabled>▶ Play 2030–2100</button>
@@ -275,16 +285,13 @@ th.sort[aria-sort] .ar{opacity:1}
     <summary>Assumptions</summary>
     <div class="params">
       <label for="p_mill">Mill rate (mills)</label><input type="number" id="p_mill" value="28" step="0.01">
-      <div class="hint">Use the town's current rate from its tax collector or CT OPM.</div>
       <label for="p_ratio">Assessment ratio</label><input type="number" id="p_ratio" value="0.70" step="0.01">
       <label for="p_disc">Market discount on newly exposed parcels</label><input type="number" id="p_disc" value="0.07" step="0.01">
       <label for="p_ffh">First-floor height above grade (ft)</label><input type="number" id="p_ffh" value="1" step="0.5">
       <label for="p_aep">Annual chance of design flood</label><input type="number" id="p_aep" value="0.01" step="0.005">
       <label for="p_cbfe">Coastal 1% still-water elevation (ft NAVD88)</label><input type="number" id="p_cbfe" value="" step="0.5" placeholder="auto">
-      <div class="hint">Auto uses the median FEMA coastal AE base flood elevation in the town.</div>
       <label for="p_mhhw">Mean higher high water (ft NAVD88)</label><input type="number" id="p_mhhw" value="" step="0.05" placeholder="auto">
       <label for="p_up">Inland flood rise by 2100, Intermediate (ft)</label><input type="number" id="p_up" value="1.0" step="0.25">
-      <div class="hint">Scaled by scenario (Low ×0.5 to High ×2) and phased in from 2020.</div>
       <label for="p_adepth">Depth in A zones without BFE (ft)</label><input type="number" id="p_adepth" value="2" step="0.5">
       <label for="p_x02">0.2% zone height above 1% flood (ft)</label><input type="number" id="p_x02" value="1" step="0.25">
       <label for="p_npv">Discount rate, cumulative loss</label><input type="number" id="p_npv" value="0.03" step="0.005">
@@ -915,7 +922,46 @@ $("run").onclick=analyze;$("csv").onclick=exportCSV;$("exempt").onchange=recompu
 $("btnPrint").onclick=()=>window.print();$("btnCloseReport").onclick=()=>$("report").classList.remove("open");
 document.addEventListener("keydown",e=>{if(e.key==="Escape")$("report").classList.remove("open")});
 let deb;document.querySelectorAll(".params input").forEach(i=>i.addEventListener("input",()=>{clearTimeout(deb);deb=setTimeout(recompute,250)}));
-setupSort();
+/* ---------- info popups for inputs ---------- */
+const INFO={
+  h_scen:["NOAA 2022 sea level rise scenarios","Five plausible futures from the 2022 Interagency Sea Level Rise Technical Report, from Low to High, projected for the nearest Long Island Sound tide gauge. Intermediate is a common planning choice; Connecticut's planning standard of 20 inches (0.5 m) by 2050 sits near the Intermediate-High to High scenarios.","Higher scenario → more land below high tide and deeper coastal floods."],
+  l_year:["Planning year","The year whose sea level and flood conditions are modeled. All dollar results compare that year with today (2020 conditions). Press Play to step through every decade.","Later year → higher water, more parcels exposed."],
+  exempt:["Tax-exempt parcels","Parcels with a state use code in the 900s (government, religious, educational and other exempt uses) or $0 assessed value pay no property tax, so they add no revenue at risk. Untick to see their value exposure anyway.",""],
+  p_mill:["Mill rate","Tax per $1,000 of assessed value. Every dollar figure scales directly with it: tax at risk = assessed value at risk × mill rate ÷ 1,000. Use the town's current rate from its tax collector or the CT Office of Policy and Management. Where a town has fire or city districts with different rates, use a weighted or the most common rate.","Doubling the mill rate doubles tax at risk."],
+  p_ratio:["Assessment ratio","Connecticut assesses property at 70% of fair market value (CGS § 12-62a). The model uses it to turn flood damage, measured in appraised dollars, into the drop in assessed value after a flood.","Change only if testing a different assessment practice."],
+  p_disc:["Market discount on newly exposed parcels","The share of value buyers knock off a property once it falls inside the flood, applied once when a parcel becomes newly exposed. Studies of coastal homes generally find discounts from a few percent up to about 10%; 7% is a mid-range default.","Higher discount → more assessed value lost at revaluation."],
+  p_ffh:["First-floor height","How far the lowest occupied floor sits above the ground at the building. Depth inside the building = flood depth at the building's ground minus this height. Older slab and crawlspace homes are often about 1 ft; homes elevated to FEMA standards in VE and AE zones can be 8 ft or more.","Higher floor → less building damage."],
+  p_aep:["Annual chance of design flood","The flood the damage estimate is built on. 0.01 is the 1% annual chance (100-year) flood that FEMA maps. Damage from that flood is multiplied by this chance to give an expected yearly loss from post-flood reassessment.","Smaller chance → smaller annualized loss."],
+  p_cbfe:["Coastal 1% still-water elevation","Height of the 1% coastal storm surge without waves, in feet NAVD88. Leave blank to use the median FEMA base flood elevation of coastal AE zones in the town. VE-zone elevations include wave height, so they are used only for parcels inside VE zones. It rises one-for-one with sea level after 2020.","Higher elevation → deeper coastal flooding everywhere within reach."],
+  p_mhhw:["Mean higher high water","The average height of the higher of the two daily high tides, in feet NAVD88. Leave blank to interpolate between NOAA's Bridgeport and New London tide gauges. Land below MHHW plus sea level rise counts as permanently lost, if it is dry today.","Higher MHHW → more land lost to the tide."],
+  p_up:["Inland flood rise by 2100","How much higher riverine 1% floods get by 2100 under the Intermediate scenario, from heavier rainfall. Scaled ×0.5 (Low) to ×2 (High) and phased in evenly from 2020. Connecticut's precipitation is projected to increase, but local river studies are the best source for a value.","Higher rise → more parcels in riverine flood zones exposed."],
+  p_adepth:["Depth in A zones without a base flood elevation","FEMA's approximate A zones show where flooding is expected but give no flood elevation. Parcels there are assumed to flood to this depth, plus the inland flood rise.",""],
+  p_x02:["0.2% zone height above the 1% flood","Parcels in the 0.2% annual chance (500-year) zone are assumed to sit this far above the 1% flood. They start flooding once the inland flood rise exceeds it.","Smaller margin → these parcels flood sooner."],
+  p_npv:["Discount rate for cumulative loss","Turns the stream of yearly losses from 2026 to 2100 into one present value in today's dollars. It is a real rate, without inflation, because values are held at today's dollars. 2–3% is typical for long-term public planning.","Higher rate → distant losses count for less."],
+  p_buf:["Coastal reach from VE zones","How far inland from FEMA's wave-hazard (VE) zones coastal water levels are applied. It keeps low inland spots that aren't connected to the Sound from being flooded by the bathtub method. Takes effect the next time you analyze a town.","Larger reach → more inland parcels tested against coastal water."],
+  p_pts:["Elevation points per parcel","1 samples ground at one point inside each parcel. 5 adds four points toward the corners, giving a finer share of land lost to high tide on large or sloping parcels, at the cost of a slower load. Building elevations are always sampled at each building.",""]
+};
+function setupInfo(){
+  for(const[id,[title,body,effect]]of Object.entries(INFO)){
+    const el=$(id);if(!el)continue;
+    const anchor=id==="exempt"?el.closest("label"):(el.tagName==="LABEL"||el.tagName==="H2"?el:document.querySelector(`label[for="${id}"]`));
+    if(!anchor)continue;
+    const b=document.createElement("button");b.type="button";b.className="info";b.textContent="i";
+    b.setAttribute("aria-label","About "+title.toLowerCase());b.setAttribute("aria-expanded","false");b.setAttribute("aria-controls","pop_"+id);
+    const pop=document.createElement("div");pop.className="pop";pop.id="pop_"+id;pop.setAttribute("role","note");pop.hidden=true;
+    pop.innerHTML=`<b>${esc(title)}</b>${esc(body)}${effect?`<p class="src">${esc(effect)}</p>`:""}`;
+    anchor.appendChild(b);
+    // place the popup after the input (assumptions grid) or after the anchor (scenario section)
+    const after=anchor.closest(".params")?(el.tagName==="LABEL"?el:document.getElementById(id)):(id==="h_scen"?$("scen"):id==="l_year"?$("year"):anchor);
+    after.insertAdjacentElement("afterend",pop);
+    b.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();const open=pop.hidden;closeInfo();if(open){pop.hidden=false;b.setAttribute("aria-expanded","true")}});
+  }
+  document.addEventListener("click",e=>{if(!e.target.closest(".pop,.info"))closeInfo()});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape")closeInfo()});
+}
+function closeInfo(){document.querySelectorAll(".pop").forEach(p=>p.hidden=true);document.querySelectorAll(".info").forEach(b=>b.setAttribute("aria-expanded","false"))}
+
+setupSort();setupInfo();
 $("play").onclick=()=>togglePlay();
 S.view="water";
 $("mapview").onclick=e=>{const b=e.target.closest("button");if(!b)return;S.view=b.dataset.v;
