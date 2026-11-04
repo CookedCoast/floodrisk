@@ -480,6 +480,66 @@
    "built": "2026-11-04",
    "parcels": 19657,
    "points": 19140
+  },
+  "middlebury": {
+   "town": "Middlebury",
+   "built": "2026-11-04",
+   "parcels": 3501,
+   "points": 3501
+  },
+  "middlefield": {
+   "town": "Middlefield",
+   "built": "2026-11-04",
+   "parcels": 2294,
+   "points": 2294
+  },
+  "middletown": {
+   "town": "Middletown",
+   "built": "2026-11-04",
+   "parcels": 15907,
+   "points": 15147
+  },
+  "milford": {
+   "town": "Milford",
+   "built": "2026-11-04",
+   "parcels": 23096,
+   "points": 22141
+  },
+  "monroe": {
+   "town": "Monroe",
+   "built": "2026-11-04",
+   "parcels": 8471,
+   "points": 8268
+  },
+  "montville": {
+   "town": "Montville",
+   "built": "2026-11-04",
+   "parcels": 7574,
+   "points": 7301
+  },
+  "morris": {
+   "town": "Morris",
+   "built": "2026-11-04",
+   "parcels": 1336,
+   "points": 1336
+  },
+  "naugatuck": {
+   "town": "Naugatuck",
+   "built": "2026-11-04",
+   "parcels": 11518,
+   "points": 11518
+  },
+  "new-britain": {
+   "town": "New Britain",
+   "built": "2026-11-04",
+   "parcels": 15732,
+   "points": 15731
+  },
+  "new-canaan": {
+   "town": "New Canaan",
+   "built": "2026-11-04",
+   "parcels": 7659,
+   "points": 7659
   }
  }
 }
