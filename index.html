@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="geo.js"></script>
 <style>
 :root{
   --navy:#20326e; --blue:#1f73ae; --green:#76b053;
@@ -210,7 +211,7 @@ th.sort[aria-sort] .ar{opacity:1}
     <h1 id="splashTitle">Flood Risk &amp; Tax Base</h1>
     <p class="splash-lede">See how sea level rise and inland flooding could affect property values and municipal tax revenue, parcel by parcel.</p>
     <ol class="splash-steps">
-      <li><span><b>Pick a town</b> and select Analyze. The app gathers parcels, FEMA flood zones, lidar ground elevations and NOAA sea level rise projections. Large towns take a minute or two.</span></li>
+      <li><span><b>Pick a town</b> and select Analyze. The app gathers parcels, FEMA flood zones, lidar ground elevations and NOAA sea level rise projections. Most towns load in seconds.</span></li>
       <li><span><b>Choose a scenario and year</b> to see the added annual tax revenue at risk compared with today, in today's dollars.</span></li>
       <li><span><b>Explore and export</b> with the map, the sortable parcel ledger, a CSV, or a printable report.</span></li>
     </ol>
@@ -237,7 +238,7 @@ th.sort[aria-sort] .ar{opacity:1}
     <label class="f" for="town">Town<select id="town"><option>Loading towns…</option></select></label>
     <div class="row"><button id="run" class="primary" disabled>Analyze town</button><button id="rep" disabled>Build report</button></div>
     <div class="pbar"><i id="prog"></i></div>
-    <div class="status" id="log" aria-live="polite"><span class="note">Pick a town and select Analyze. Large towns take a minute or two.</span></div>
+    <div class="status" id="log" aria-live="polite"><span class="note">Pick a town and select Analyze. Most towns load in seconds.</span></div>
   </div>
 
   <div class="sec">
@@ -321,7 +322,7 @@ th.sort[aria-sort] .ar{opacity:1}
     <header><h3>Method and sources</h3></header>
     <div class="method" id="method">
       <p><b>Parcels and values.</b> Parcel boundaries with assessed and appraised land and building values come live from the <a href="https://services3.arcgis.com/3FL1kr7L4LvwA2Kb/ArcGIS/rest/services/Connecticut_CAMA_and_Parcel_Layer/FeatureServer" target="_blank" rel="noopener">Connecticut CAMA and Parcel Layer</a>. Connecticut assesses property at 70% of appraised value.</p>
-      <p><b>Ground elevation.</b> Each parcel is sampled at a point inside its boundary (five points in finer mode) against the <a href="https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer" target="_blank" rel="noopener">USGS 3DEP</a> lidar elevation service, in feet NAVD88. Only parcels in or near a FEMA flood zone, or within reach of the coast, are sampled.</p>
+      <p><b>Ground elevation.</b> Each parcel is sampled at a point inside its boundary (five points in finer mode) against the <a href="https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer" target="_blank" rel="noopener">USGS 3DEP</a> lidar elevation service, in feet NAVD88. Elevations for each town's parcels are saved ahead of time and refreshed quarterly; only points missing from the saved set are requested live. Only parcels in or near a FEMA flood zone, or within reach of the coast, are sampled.</p>
       <p><b>Sea level rise.</b> <a href="https://tidesandcurrents.noaa.gov/sltrends/" target="_blank" rel="noopener">NOAA 2022 Interagency</a> relative sea level scenarios load for the nearer of the Bridgeport and New London gauges, relative to 2005. Mean higher high water is interpolated between those gauges. Land below future high tide counts as permanently lost only if it is dry today.</p>
       <p><b>Coastal flooding.</b> Parcels in FEMA VE or coastal AE zones use their base flood elevation; other parcels within reach of a VE zone use the town's coastal still-water elevation. Both rise one-for-one with sea level after 2020. This bathtub approach ignores wave attenuation and flood protection.</p>
       <p><b>Inland flooding.</b> Parcels in riverine A, AE, AO and AH zones from the <a href="https://hazards.fema.gov/femaportal/wps/portal/NFHLWMS" target="_blank" rel="noopener">FEMA National Flood Hazard Layer</a> use the base flood elevation (or zone depth) plus a rise in flood elevation that grows with the scenario. Parcels in the 0.2% annual chance zone begin to flood once that rise exceeds their assumed margin.</p>
@@ -388,20 +389,7 @@ async function pool(items,n,fn){let i=0;const out=new Array(items.length);
   await Promise.all(Array.from({length:Math.min(n,items.length)},async()=>{while(i<items.length){const k=i++;out[k]=await fn(items[k],k)}}));return out}
 
 /* ---------- geometry ---------- */
-function polysOf(g){if(!g)return[];return g.type==="Polygon"?[g.coordinates]:g.type==="MultiPolygon"?g.coordinates:[]}
-function bboxOf(g){let a=180,b=90,c=-180,d=-90;for(const p of polysOf(g))for(const r of p)for(const[x,y]of r){if(x<a)a=x;if(y<b)b=y;if(x>c)c=x;if(y>d)d=y}return[a,b,c,d]}
-function inRing(x,y,r){let ins=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const xi=r[i][0],yi=r[i][1],xj=r[j][0],yj=r[j][1];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))ins=!ins}return ins}
-function inGeom(x,y,g){for(const p of polysOf(g)){if(inRing(x,y,p[0])){let hole=false;for(let k=1;k<p.length;k++)if(inRing(x,y,p[k])){hole=true;break}if(!hole)return true}}return false}
-function ringArea(r){let a=0;for(let i=0,j=r.length-1;i<r.length;j=i++)a+=(r[j][0]+r[i][0])*(r[j][1]-r[i][1]);return Math.abs(a/2)}
-function pointOn(g){
-  const ps=polysOf(g);if(!ps.length)return null;let best=ps[0],ba=-1;for(const p of ps){const a=ringArea(p[0]);if(a>ba){ba=a;best=p}}
-  const r=best[0];let cx=0,cy=0,A=0;for(let i=0,j=r.length-1;i<r.length;j=i++){const f=r[j][0]*r[i][1]-r[i][0]*r[j][1];cx+=(r[j][0]+r[i][0])*f;cy+=(r[j][1]+r[i][1])*f;A+=f}
-  if(A!==0){cx/=3*A;cy/=3*A;if(inGeom(cx,cy,{type:"Polygon",coordinates:best}))return[cx,cy]}
-  let y0=1e9,y1=-1e9;for(const[,y]of r){if(y<y0)y0=y;if(y>y1)y1=y}
-  for(const f of[.5,.4,.6,.3,.7]){const y=y0+(y1-y0)*f;const xs=[];for(let i=0,j=r.length-1;i<r.length;j=i++){const yi=r[i][1],yj=r[j][1];if((yi>y)!==(yj>y))xs.push(r[i][0]+(y-yi)*(r[j][0]-r[i][0])/(yj-yi))}xs.sort((a,b)=>a-b);
-    if(xs.length>=2){let w=0,m=null;for(let k=0;k+1<xs.length;k+=2){if(xs[k+1]-xs[k]>w){w=xs[k+1]-xs[k];m=(xs[k]+xs[k+1])/2}}if(m!==null)return[m,y]}}
-  return[r[0][0],r[0][1]];
-}
+/* polysOf, bboxOf, inRing, inGeom, ringArea, pointOn, ptKey and townSlug live in geo.js */
 function extraPoints(p,g){const b=p.bbox,out=[];for(const[cx,cy]of[[b[0],b[1]],[b[2],b[1]],[b[0],b[3]],[b[2],b[3]]]){const x=(p.pt[0]+cx)/2,y=(p.pt[1]+cy)/2;if(inGeom(x,y,g))out.push([x,y])}return out}
 /* compact geometry: Web Mercator metres relative to a town origin, stored in typed arrays */
 const R_E=6378137,PI_R=Math.PI*R_E;
@@ -496,14 +484,19 @@ async function analyze(){
     $("gauge").textContent=`NOAA 2022 scenarios at the ${SLR_FALLBACK[st].name} gauge (${st}). High tide (MHHW) ${S.mhhw.toFixed(2)} ft NAVD88.`;
 
     const need=parcels.filter(p=>p.zone||p.coastal);
-    log("Sampling lidar ground elevation for "+num(need.length)+" parcels…","act");
-    const pts=[];for(const p of need){const list=[p.pt];if(p.extra)list.push(...p.extra);p.elevIdx=[];for(const q of list){p.elevIdx.push(pts.length);pts.push(q)}}
-    const vals=new Array(pts.length).fill(null);const B=500;const batches=[];for(let i=0;i<pts.length;i+=B)batches.push(i);let eb=0,failed=0;
+    // Saved elevations (built by the GitHub Action into data/elev) cover most points; only missing ones go to USGS.
+    const saved=await loadSavedElevations(town);
+    const pts=[],vals=[],live=[];
+    for(const p of need){const list=[p.pt];if(p.extra)list.push(...p.extra);p.elevIdx=[];
+      for(const q of list){const i=pts.length;p.elevIdx.push(i);pts.push(q);const v=saved?saved.get(ptKey(q)):undefined;vals.push(v===undefined?null:v);if(v===undefined)live.push(i)}}
+    if(saved)log(`Used saved elevations (${S.elevBuilt}) for ${num(pts.length-live.length)} of ${num(pts.length)} points`,"ok");
+    if(live.length)log("Sampling lidar ground elevation live for "+num(live.length)+" points…","act");
+    const B=500;const batches=[];for(let i=0;i<live.length;i+=B)batches.push(i);let eb=0,failed=0;
     await pool(batches,5,async start=>{
-      const chunk=pts.slice(start,start+B);
-      const body="geometry="+encodeURIComponent(JSON.stringify({points:chunk.map(q=>[+q[0].toFixed(6),+q[1].toFixed(6)]),spatialReference:{wkid:4326}}))+"&geometryType=esriGeometryMultipoint&returnFirstValueOnly=true&interpolation=RSP_BilinearInterpolation&f=json";
+      const idx=live.slice(start,start+B);
+      const body="geometry="+encodeURIComponent(JSON.stringify({points:idx.map(i=>[+pts[i][0].toFixed(6),+pts[i][1].toFixed(6)]),spatialReference:{wkid:4326}}))+"&geometryType=esriGeometryMultipoint&returnFirstValueOnly=true&interpolation=RSP_BilinearInterpolation&f=json";
       try{const j=await getJSON(SVC.elev,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body});
-        for(const s of j.samples||[]){const v=parseFloat(s.value);if(isFinite(v)&&v>-50)vals[start+s.locationId]=v*FT}}
+        for(const s of j.samples||[]){const v=parseFloat(s.value);if(isFinite(v)&&v>-50)vals[idx[s.locationId]]=v*FT}}
       catch(e){failed++}
       eb++;prog(.45+.5*eb/batches.length)});
     if(failed)log(failed+" elevation request(s) failed; those parcels are left out","e");
@@ -515,6 +508,13 @@ async function analyze(){
   $("run").disabled=false;
 }
 
+async function loadSavedElevations(town){
+  S.elevBuilt=null;
+  try{const r=await fetch(`data/elev/${townSlug(town)}.json`,{cache:"no-cache"});if(!r.ok)return null;const d=await r.json();
+    const m=new Map();let x=0,y=0;for(let i=0;i<d.n;i++){x+=d.lon[i];y+=d.lat[i];m.set(x+","+y,d.z[i]/10)}
+    S.elevBuilt=d.built;return m}
+  catch(e){return null}
+}
 async function loadFema(bb){
   const out=new Map();const where=encodeURIComponent("SFHA_TF='T' OR ZONE_SUBTY LIKE '%0.2 PCT%'");
   const tiles=[];const step=0.04;for(let x=bb[0];x<bb[2];x+=step)for(let y=bb[1];y<bb[3];y+=step)tiles.push([x,y,Math.min(x+step,bb[2]),Math.min(y+step,bb[3])]);

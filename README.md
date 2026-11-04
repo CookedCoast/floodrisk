@@ -13,6 +13,14 @@ It is a static site (`index.html` + `logo.svg`) with no build step. Each time a 
 | Ground elevation (1 m lidar) | USGS 3DEP elevation service |
 | Sea level rise scenarios (2022 Interagency) | NOAA CO-OPS, Bridgeport and New London gauges |
 
+## Saved elevations
+
+Sampling lidar elevation for thousands of parcels is the slowest part of an analysis, so each town's parcel elevations are saved in `data/elev/<town>.json` and the app requests only points that are missing. The files are built by the **Build saved elevations** GitHub Action (`.github/workflows/elevations.yml`, script `scripts/build-elevations.mjs`):
+
+- Run it from the Actions tab for all towns, or for a comma-separated list of towns. Tick *force* to rebuild towns that already have files.
+- It refreshes every town quarterly. It stops starting new towns after five hours and commits progress every ten towns, so a run that ends early resumes where it left off.
+- `geo.js` holds the parcel-point logic shared by the app and the script, so saved points match the app exactly.
+
 ## Method in brief
 
 - Land below future mean higher high water is treated as permanently lost (only land that is dry today counts).

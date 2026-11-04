@@ -1,0 +1,46 @@
+name: Build saved elevations
+
+# Samples USGS 3DEP ground elevation at each parcel and commits data/elev/<town>.json.
+# Run it from the Actions tab (all towns, or a comma-separated list). It also refreshes
+# every town each quarter, after the CT parcel layer's annual updates.
+on:
+  workflow_dispatch:
+    inputs:
+      towns:
+        description: "Towns to build, comma-separated as in the parcel layer (blank = all towns)"
+        required: false
+        default: ""
+      force:
+        description: "Rebuild towns that already have saved elevations"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "17 6 1 */3 *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: elevations
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Build elevations
+        env:
+          TOWNS: ${{ github.event.inputs.towns }}
+          FORCE: ${{ github.event_name == 'schedule' && 'true' || github.event.inputs.force }}
+          MAX_MINUTES: "300"
+          GIT_COMMIT: "true"
+        run: node scripts/build-elevations.mjs
