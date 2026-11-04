@@ -12,6 +12,11 @@
    "town": "Colchester",
    "built": "2026-11-04",
    "tiles": 245
+  },
+  "east-lyme": {
+   "town": "East Lyme",
+   "built": "2026-11-04",
+   "tiles": 268
   }
  }
 }
