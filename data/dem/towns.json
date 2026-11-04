@@ -612,6 +612,11 @@
    "town": "Scotland",
    "built": "2026-11-04",
    "tiles": 15
+  },
+  "seymour": {
+   "town": "Seymour",
+   "built": "2026-11-04",
+   "tiles": 235
   }
  }
 }
