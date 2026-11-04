@@ -205,7 +205,7 @@ function drawAcres() {
   $("acresNote").textContent = `${SCEN[S.scen]}, ${cur.y}: ${num(cur.a[1])} acres of parcel land below high tide and ${num(cur.a[2] + cur.a[3] + cur.a[4])} acres in the 1% flood, ${num(tot)} in all (${num(base)} today).`;
 }
 function acresSVG(data, year, c) {
-  const W = 900, H = 240, m = { l: 64, r: 16, t: 12, b: 30 };
+  const W = 900, H = 250, m = { l: 64, r: 16, t: 24, b: 30 };
   const tot = data.map((d) => d.a[1] + d.a[2] + d.a[3] + d.a[4]);
   const nice = niceMax(Math.max(1, ...tot)), bw = (W - m.l - m.r) / data.length;
   const Y = (v) => H - m.b - v / nice * (H - m.t - m.b);
@@ -219,7 +219,7 @@ function acresSVG(data, year, c) {
     if (sel) s += `<rect x="${(x - 3).toFixed(1)}" y="${m.t}" width="${(w + 6).toFixed(1)}" height="${H - m.t - m.b}" fill="none" stroke="${c.mark}" stroke-width="1.5" stroke-dasharray="4 3"/>`;
     s += `<text ${ft} x="${(x + w / 2).toFixed(1)}" y="${H - 10}" text-anchor="middle" fill="${c.text}"${sel ? ' font-weight="700"' : ""}>${d.y}</text>`;
   });
-  s += `<text ${ft} x="${m.l - 8}" y="${m.t - 2}" text-anchor="end" fill="${c.text}">acres</text>`;
+  s += `<text ${ft} x="${m.l - 8}" y="12" text-anchor="end" fill="${c.text}">acres</text>`;
   return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flooded parcel acres by year">${s}</svg>`;
 }
 /* Town-wide flood image for the report (light background, print colors). */
