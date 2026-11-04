@@ -462,6 +462,11 @@
    "town": "Morris",
    "built": "2026-11-04",
    "tiles": 0
+  },
+  "naugatuck": {
+   "town": "Naugatuck",
+   "built": "2026-11-04",
+   "tiles": 155
   }
  }
 }
