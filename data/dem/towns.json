@@ -357,6 +357,11 @@
    "town": "Hamden",
    "built": "2026-11-04",
    "tiles": 188
+  },
+  "hampton": {
+   "town": "Hampton",
+   "built": "2026-11-04",
+   "tiles": 25
   }
  }
 }
