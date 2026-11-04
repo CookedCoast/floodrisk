@@ -540,6 +540,66 @@
    "built": "2026-11-04",
    "parcels": 7659,
    "points": 7659
+  },
+  "new-fairfield": {
+   "town": "New Fairfield",
+   "built": "2026-11-04",
+   "parcels": 6579,
+   "points": 6579
+  },
+  "new-hartford": {
+   "town": "New Hartford",
+   "built": "2026-11-04",
+   "parcels": 3497,
+   "points": 3497
+  },
+  "new-haven": {
+   "town": "New Haven",
+   "built": "2026-11-04",
+   "parcels": 27194,
+   "points": 23056
+  },
+  "new-london": {
+   "town": "New London",
+   "built": "2026-11-04",
+   "parcels": 7321,
+   "points": 7321
+  },
+  "new-milford": {
+   "town": "New Milford",
+   "built": "2026-11-04",
+   "parcels": 13707,
+   "points": 13707
+  },
+  "newington": {
+   "town": "Newington",
+   "built": "2026-11-04",
+   "parcels": 12528,
+   "points": 12527
+  },
+  "newtown": {
+   "town": "Newtown",
+   "built": "2026-11-04",
+   "parcels": 11211,
+   "points": 11210
+  },
+  "norfolk": {
+   "town": "Norfolk",
+   "built": "2026-11-04",
+   "parcels": 1256,
+   "points": 1256
+  },
+  "north-branford": {
+   "town": "North Branford",
+   "built": "2026-11-04",
+   "parcels": 5792,
+   "points": 5790
+  },
+  "north-canaan": {
+   "town": "North Canaan",
+   "built": "2026-11-04",
+   "parcels": 1723,
+   "points": 1723
   }
  }
 }
