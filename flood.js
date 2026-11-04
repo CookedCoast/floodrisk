@@ -9,7 +9,7 @@
 "use strict";
 const DEM_SVC = "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage";
 const FT_M = 3.28084, ACRE_M2 = 4046.856;
-const FLOOD_RGBA = { chronic: [32, 50, 110, 190], d3: [201, 48, 44, 175], d1: [232, 131, 58, 165], d0: [242, 193, 78, 160] };
+const FLOOD_RGBA = { chronic: [12, 68, 124, 215], hatch: [111, 159, 211, 215], d3: [24, 95, 165, 200], d1: [55, 138, 221, 175], d0: [158, 195, 230, 165] };
 const F = { view: null, town: null, overlay: null, req: 0, timer: null, playing: null, acresKey: null, acres: null };
 
 /* ---------- elevation grid ---------- */
@@ -110,8 +110,11 @@ function classify(g, scen, year, pr, out) {
 function paint(g, cls) {
   const c = document.createElement("canvas"); c.width = g.w; c.height = g.h;
   const ctx = c.getContext("2d"), img = ctx.createImageData(g.w, g.h), d = img.data;
-  const pal = [null, FLOOD_RGBA.chronic, FLOOD_RGBA.d0, FLOOD_RGBA.d1, FLOOD_RGBA.d3];
-  for (let i = 0; i < cls.length; i++) { const p = pal[cls[i]]; if (p) { d[4 * i] = p[0]; d[4 * i + 1] = p[1]; d[4 * i + 2] = p[2]; d[4 * i + 3] = p[3]; } }
+  const pal = [null, FLOOD_RGBA.chronic, FLOOD_RGBA.d0, FLOOD_RGBA.d1, FLOOD_RGBA.d3], W = g.w;
+  for (let i = 0; i < cls.length; i++) {
+    let p = pal[cls[i]]; if (!p) continue;
+    if (cls[i] === 1 && ((i % W) + Math.floor(i / W)) % 6 < 2) p = FLOOD_RGBA.hatch;  // diagonal hatch for land lost to high tide
+    d[4 * i] = p[0]; d[4 * i + 1] = p[1]; d[4 * i + 2] = p[2]; d[4 * i + 3] = p[3]; }
   ctx.putImageData(img, 0, 0);
   return c;
 }
@@ -148,6 +151,7 @@ function floodRender() {
     S.ctrl.addOverlay(F.overlay, "Flood extent and depth");
     F.overlay.bringToBack(); if (S.zoneLayer) S.zoneLayer.redraw();
   } else { F.overlay.setUrl(url); F.overlay.setBounds(L.latLngBounds(bounds)); }
+  F.overlay.setOpacity(S.view === "tax" ? 0.35 : 1);
 }
 function floodNote(t) { const el = $("floodnote"); if (el) { el.textContent = t; el.hidden = !t; } }
 
@@ -199,7 +203,7 @@ function floodAcres() {
 function drawAcres() {
   const data = F.acres; if (!data) return;
   $("acresChart").innerHTML = acresSVG(data, S.year, { grid: "var(--line)", text: "var(--muted)", mark: "var(--accent)",
-    c: ["", "var(--chronic)", "var(--d0)", "var(--d1)", "var(--d3)"] });
+    c: ["", "url(#acHatch)", "var(--d0)", "var(--d1)", "var(--d3)"] });
   const cur = data.find((d) => d.y === Math.round(S.year / 10) * 10) || data[data.length - 1];
   const tot = cur.a[1] + cur.a[2] + cur.a[3] + cur.a[4], base = data[0].a.slice(1).reduce((s, v) => s + v, 0);
   $("acresNote").textContent = `${SCEN[S.scen]}, ${cur.y}: ${num(cur.a[1])} acres of parcel land below high tide and ${num(cur.a[2] + cur.a[3] + cur.a[4])} acres in the 1% flood, ${num(tot)} in all (${num(base)} today).`;
@@ -220,7 +224,8 @@ function acresSVG(data, year, c) {
     s += `<text ${ft} x="${(x + w / 2).toFixed(1)}" y="${H - 10}" text-anchor="middle" fill="${c.text}"${sel ? ' font-weight="700"' : ""}>${d.y}</text>`;
   });
   s += `<text ${ft} x="${m.l - 8}" y="12" text-anchor="end" fill="${c.text}">acres</text>`;
-  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flooded parcel acres by year">${s}</svg>`;
+  const defs = `<defs><pattern id="acHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#0c447c"/><rect width="2" height="6" fill="#6f9fd3"/></pattern></defs>`;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flooded parcel acres by year">${defs}${s}</svg>`;
 }
 /* Town-wide flood image for the report (light background, print colors). */
 function floodReportImage() {
@@ -228,9 +233,10 @@ function floodReportImage() {
   const cls = classify(g, S.scen, S.year, P(), new Uint8Array(g.w * g.h));
   const c = document.createElement("canvas"); c.width = g.w; c.height = g.h;
   const ctx = c.getContext("2d"), img = ctx.createImageData(g.w, g.h), d = img.data;
-  const pal = [null, [32, 50, 110], [242, 193, 78], [232, 131, 58], [201, 48, 44]];
+  const pal = [null, [12, 68, 124], [158, 195, 230], [55, 138, 221], [24, 95, 165]], W = g.w;
   for (let i = 0; i < cls.length; i++) {
-    const p = pal[cls[i]], j = 4 * i;
+    let p = pal[cls[i]]; const j = 4 * i;
+    if (cls[i] === 1 && ((i % W) + Math.floor(i / W)) % 6 < 2) p = [111, 159, 211];
     if (p) { d[j] = p[0]; d[j + 1] = p[1]; d[j + 2] = p[2]; d[j + 3] = 255; }
     else if (g.land[i]) { d[j] = 228; d[j + 1] = 232; d[j + 2] = 235; d[j + 3] = 255; }
     else { d[j] = 247; d[j + 1] = 249; d[j + 2] = 248; d[j + 3] = 255; }

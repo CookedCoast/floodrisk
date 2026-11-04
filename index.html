@@ -18,19 +18,22 @@
   --bg:#f8f9f7; --panel:#ffffff; --ink:#212529; --ink-2:#444444; --muted:#5f6871;
   --line:#dbdcde; --line-2:#c4c7cc; --accent:#1f73ae; --accent-ink:#fff; --wash:#eef3f8; --head:#20326e;
   --loss:#b42318; --surge:#c25e00; --ok:#2e7d32;
-  --chronic:#20326e; --d3:#c9302c; --d1:#e8833a; --d0:#f2c14e; --none:#d3d8dc;
+  --chronic:#0c447c; --d3:#185fa5; --d1:#378add; --d0:#9ec3e6; --none:#d3d8dc;
+  --t1:#cecbf6; --t2:#afa9ec; --t3:#7f77dd; --t4:#534ab7; --t5:#3c3489;
+  --o1:#a49de9; --o2:#7f77dd; --o3:#5f55c4; --o4:#453ba3; --o5:#2b2470;
+  --hatch:repeating-linear-gradient(135deg,#0c447c 0 3px,#6f9fd3 3px 4.5px);
   --font:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0e1424; --panel:#151d31; --ink:#eef1f6; --ink-2:#cfd6e3; --muted:#9aa4b8;
   --line:#28324a; --line-2:#3a4560; --accent:#5aa6dc; --accent-ink:#071224; --wash:#1d2840; --head:#a9bce8;
   --loss:#ff7a6b; --surge:#f5a25d; --ok:#6fcf7f;
-  --chronic:#7d95e8; --d3:#ef6b5e; --d1:#f0a35a; --d0:#f3d27a; --none:#34405a; color-scheme:dark}}
+  --chronic:#0c447c; --d3:#185fa5; --d1:#378add; --d0:#9ec3e6; --none:#34405a; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0e1424; --panel:#151d31; --ink:#eef1f6; --ink-2:#cfd6e3; --muted:#9aa4b8;
   --line:#28324a; --line-2:#3a4560; --accent:#5aa6dc; --accent-ink:#071224; --wash:#1d2840; --head:#a9bce8;
   --loss:#ff7a6b; --surge:#f5a25d; --ok:#6fcf7f;
-  --chronic:#7d95e8; --d3:#ef6b5e; --d1:#f0a35a; --d0:#f3d27a; --none:#34405a; color-scheme:dark}
+  --chronic:#0c447c; --d3:#185fa5; --d1:#378add; --d0:#9ec3e6; --none:#34405a; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0}
@@ -93,6 +96,18 @@ main{padding-block:20px 40px;padding-left:24px;padding-right:max(24px,env(safe-a
 #chart{width:100%;min-width:520px;height:auto;display:block}
 #chart text{font:12px var(--font);fill:var(--muted)}
 .mapwrap{position:relative}
+.seg2{display:inline-flex;border:1px solid var(--line-2);border-radius:5px;overflow:hidden}
+.seg2 button{border:0;border-radius:0;padding:6px 12px;font-size:.84rem;background:transparent}
+.seg2 button+button{border-left:1px solid var(--line-2)}
+.seg2 button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.lgd{display:grid;gap:6px;margin-top:10px}
+.lgrow{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;font-size:.84rem;color:var(--ink-2)}
+.lgrow .lgt{font-size:.74rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--head);min-width:150px}
+.lgrow i{display:inline-block;width:16px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.lgrow i.dash{background:none;border:1.5px dashed #1f73ae}
+.lgrow i.tx{background:none;border:2.5px solid var(--c)}
+.lgrow i.tx{box-shadow:0 0 0 1px #fff inset}
+.view-tax .lgrow i.tx{background:var(--f);border-color:var(--f);box-shadow:none}
 .floodnote{position:absolute;left:10px;bottom:28px;z-index:500;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:5px;padding:6px 10px;font-size:.82rem;box-shadow:0 2px 8px rgba(0,0,0,.15);max-width:calc(100% - 20px)}
 #acresChart svg{width:100%;min-width:520px;height:auto;display:block}
 #play{width:100%}
@@ -297,16 +312,17 @@ th.sort[aria-sort] .ar{opacity:1}
 
   <section class="split">
     <div class="card">
-      <header><h3>Parcel exposure map</h3><p id="mapnote">Run an analysis to map exposure.</p></header>
+      <header><h3>Flood and tax map</h3>
+        <div class="seg2" id="mapview" role="group" aria-label="Map view"><button type="button" data-v="water" aria-pressed="true">Flood depth</button><button type="button" data-v="tax" aria-pressed="false">Tax at risk</button></div>
+        <p id="mapnote">Run an analysis to map exposure.</p></header>
       <div class="mapwrap"><div id="map"></div><div class="floodnote" id="floodnote" hidden></div></div>
-      <div class="legend">
-        <span><i style="background:var(--chronic)"></i>Below future high tide</span>
-        <span><i style="background:var(--d3)"></i>1% flood depth over 3 ft</span>
-        <span><i style="background:var(--d1)"></i>1 to 3 ft</span>
-        <span><i style="background:var(--d0)"></i>Under 1 ft</span>
-        <span><i style="background:var(--none)"></i>Parcel not exposed</span>
+      <div class="lgd">
+        <div class="lgrow"><span class="lgt">1% flood depth</span>
+          <span><i style="background:var(--d0)"></i>Under 1 ft</span><span><i style="background:var(--d1)"></i>1–3 ft</span><span><i style="background:var(--d3)"></i>Over 3 ft</span><span><i style="background:var(--hatch)"></i>Below future high tide</span><span><i class="dash"></i>FEMA zone</span></div>
+        <div class="lgrow"><span class="lgt" id="lgTaxTitle">Parcel outline: added tax / yr</span>
+          <span><i class="tx" style="--c:var(--o1);--f:var(--t1)"></i>&lt;$250</span><span><i class="tx" style="--c:var(--o2);--f:var(--t2)"></i>$250–1K</span><span><i class="tx" style="--c:var(--o3);--f:var(--t3)"></i>$1K–5K</span><span><i class="tx" style="--c:var(--o4);--f:var(--t4)"></i>$5K–20K</span><span><i class="tx" style="--c:var(--o5);--f:var(--t5)"></i>&gt;$20K</span></div>
       </div>
-      <p class="note" style="margin:8px 0 0">Shading shows modeled flood extent and depth on 1 m lidar ground for the selected scenario and year; parcel colors use the same classes, judged at each parcel's buildings.</p>
+      <p class="note" style="margin:8px 0 0" id="mapexplain">Blue shading is modeled flood extent and depth on 1 m lidar ground for the selected scenario and year. Parcels are outlined by the added annual tax at risk, judged at each parcel's buildings.</p>
     </div>
     <div class="card">
       <header><h3>Where the loss comes from</h3><p>Selected scenario and year.</p></header>
@@ -319,7 +335,7 @@ th.sort[aria-sort] .ar{opacity:1}
   <section class="card">
     <header><h3>Flooded area over time</h3><p>Acres of parcel land below future high tide or inside the 1% flood, by decade, for the selected scenario. The dashed box is the selected year.</p></header>
     <div class="chartwrap" id="acresChart"></div>
-    <div class="legend"><span><i style="background:var(--chronic)"></i>Below high tide</span><span><i style="background:var(--d3)"></i>Over 3 ft</span><span><i style="background:var(--d1)"></i>1 to 3 ft</span><span><i style="background:var(--d0)"></i>Under 1 ft</span></div>
+    <div class="legend"><span><i style="background:var(--hatch)"></i>Below high tide</span><span><i style="background:var(--d3)"></i>Over 3 ft</span><span><i style="background:var(--d1)"></i>1 to 3 ft</span><span><i style="background:var(--d0)"></i>Under 1 ft</span></div>
     <p class="note" id="acresNote" style="margin:8px 0 0">Run an analysis to see flooded area over time.</p>
   </section>
 
@@ -374,7 +390,10 @@ const SLR_FALLBACK={
 const DDF=[[-1,2.5],[0,13.4],[1,23.3],[2,32.1],[3,40.1],[4,47.1],[5,53.2],[6,58.6],[7,63.2],[8,67.2],[9,70.5],[10,73.2],[11,75.4],[12,77.2],[13,78.5],[14,79.5],[15,80.2],[16,80.7]];
 const FIELDS="OBJECTID,Parcel_ID,Location,Town_Name,Assessed_Total,Assessed_Land,Assessed_Building,Appraised_Building,Appraised_Outbuilding,State_Use,State_Use_Description,Living_Area,AYB,Land_Acres";
 const FT=3.28084;
-const PRINT={chronic:"#20326e",d3:"#c9302c",d1:"#e8833a",d0:"#f2c14e",none:"#e4e8eb",zone:"#1f73ae"};
+const PRINT={chronic:"#0c447c",d3:"#185fa5",d1:"#378add",d0:"#9ec3e6",none:"#e4e8eb",zone:"#1f73ae"};
+const TAXC=["","#cecbf6","#afa9ec","#7f77dd","#534ab7","#3c3489"],TAXO=["","#a49de9","#7f77dd","#5f55c4","#453ba3","#2b2470"],TAXB=[0.5,250,1000,5000,20000];
+const taxClass=d=>d<=TAXB[0]?0:d<TAXB[1]?1:d<TAXB[2]?2:d<TAXB[3]?3:d<TAXB[4]?4:5;
+const HATCH="repeating-linear-gradient(135deg,#0c447c 0 3px,#6f9fd3 3px 4.5px)";
 
 const $=id=>document.getElementById(id);
 const S={scen:2,year:2050,parcels:[],zones:[],station:null,mhhw:null,coastBFE:null,coastal:false,results:null,townName:null,map:null,layer:null,zoneLayer:null,bb:null};
@@ -681,7 +700,7 @@ function chartSVG(series,sel,year,c){
 }
 const PART_LABEL={tidal:"Land lost to high tide",disc:"Market discount",reas:"Post-flood reassessment"};
 function drawMix(b){
-  const col={tidal:"var(--chronic)",disc:"var(--surge)",reas:"var(--d3)"};
+  const col={tidal:"var(--chronic)",disc:"var(--t3)",reas:"var(--t4)"};
   const mx=Math.max(1,...Object.values(b.parts).map(Math.abs));
   $("mix").innerHTML=Object.entries(b.parts).map(([k,v])=>`<div class="r"><span>${PART_LABEL[k]}</span><div class="track"><i style="width:${Math.max(0,v)/mx*100}%;background:${col[k]}"></i></div><span class="v">${money(v)}</span></div>`).join("");
   const top=b.uses.slice(0,7);const um=Math.max(1,...top.map(e=>e[1]));
@@ -725,8 +744,9 @@ const CanvasLayer=window.L?L.Layer.extend({
       let g=groups.get(st.key);if(!g){g={st,items:[]};groups.set(st.key,g)}g.items.push(it)}
     // Fill in batches of 50 shapes: one giant path rasterizes ~40x slower in Chrome (627 ms vs 16 ms for Groton).
     for(const{st,items}of[...groups.values()].sort((a,b)=>a.st.z-b.st.z)){
-      if(st.fill)ctx.fillStyle=st.fill;if(st.stroke){ctx.strokeStyle=st.stroke;ctx.lineWidth=st.sw}
-      const flush=()=>{if(st.fill){ctx.globalAlpha=st.fa;ctx.fill()}if(st.stroke){ctx.globalAlpha=st.sa;ctx.stroke()}ctx.beginPath()};
+      if(st.fill)ctx.fillStyle=st.fill;if(st.stroke){ctx.strokeStyle=st.stroke;ctx.lineWidth=st.sw;ctx.setLineDash(st.dash||[])}
+      const flush=()=>{if(st.fill){ctx.globalAlpha=st.fa;ctx.fill()}
+        if(st.stroke){if(st.halo){ctx.globalAlpha=.85;ctx.strokeStyle="#ffffff";ctx.lineWidth=st.sw+1.6;ctx.stroke();ctx.strokeStyle=st.stroke;ctx.lineWidth=st.sw}ctx.globalAlpha=st.sa;ctx.stroke()}ctx.beginPath()};
       ctx.beginPath();let n=0;
       for(const it of items){const xy=it.xy,rg=it.rg,b=it.mb;
         if((b[2]-b[0])*k<1.2&&(b[3]-b[1])*k<1.2)ctx.rect(ox+k*b[0],oy-k*b[3],1.2,1.2);
@@ -735,18 +755,22 @@ const CanvasLayer=window.L?L.Layer.extend({
           ctx.closePath();s0=e}}
         if(++n%50===0)flush()}
       flush()}
-    ctx.globalAlpha=1}
+    ctx.globalAlpha=1;ctx.setLineDash([])}
 }):null;
 function parcelStyle(p,z){
-  if(p===S.sel)return{key:"sel",z:9,fill:null,stroke:"#00e5ff",sa:1,sw:3};
-  const c=(S.colors&&S.colors[p.cls])||"#9aa3ab";const line=z>=15;
-  return p.cls==="none"?{key:"none",z:0,fill:c,fa:.12,stroke:line?"#6b7280":null,sa:.5,sw:.4}
-    :{key:p.cls,z:1+["d0","d1","d3","chronic"].indexOf(p.cls),fill:c,fa:.75,stroke:line?"#ffffff":null,sa:.6,sw:.4}}
-function zoneStyle(zn){return zn.kind==="X02"?{key:"x02",z:0,fill:"#1f73ae",fa:.04,stroke:"#1f73ae",sa:.35,sw:.6}:{key:"sfha",z:1,fill:"#1f73ae",fa:.1,stroke:"#1f73ae",sa:.5,sw:.6}}
+  if(p===S.sel)return{key:"sel",z:9,fill:null,stroke:"#00b8d4",sa:1,sw:3};
+  const t=p.taxc||0,hi=z>=15;
+  if(S.view==="tax"){
+    if(t)return{key:"f"+t,z:t,fill:TAXC[t],fa:.85,stroke:hi?"#ffffff":null,sa:.7,sw:.5};
+    return{key:"n",z:0,fill:"#9aa3ab",fa:.08,stroke:hi?"#7d8790":null,sa:.4,sw:.4}}
+  if(t)return{key:"o"+t,z:t,fill:null,stroke:TAXO[t],sa:1,sw:(hi?1.2:.7)+t*(hi?.35:.2),halo:true};
+  return hi?{key:"n",z:0,fill:null,stroke:"#7d8790",sa:.45,sw:.4}:null}
+function zoneStyle(zn){return zn.kind==="X02"?null:{key:"sfha",z:1,fill:null,stroke:"#1f73ae",sa:.7,sw:1,dash:[5,4]}}
 function buildMap(){
   if(!window.L){$("mapnote").textContent="The map library did not load; results are still shown below.";return}
   if(!S.map){S.map=L.map("map");
-    const gray=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,maxNativeZoom:16,attribution:"Esri, HERE, Garmin, © OpenStreetMap contributors"}).addTo(S.map);
+    const dark=document.documentElement.dataset.theme==="dark"||(document.documentElement.dataset.theme!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches);
+    const gray=L.tileLayer(`https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_${dark?"Dark":"Light"}_Gray_Base/MapServer/tile/{z}/{y}/{x}`,{maxZoom:19,maxNativeZoom:16,attribution:"Esri, HERE, Garmin, © OpenStreetMap contributors"}).addTo(S.map);
     const imagery=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri, Maxar, Earthstar Geographics"});
     S.ctrl=L.control.layers({"Light gray":gray,"Imagery":imagery},{},{collapsed:true}).addTo(S.map);
     S.map.on("click",e=>{if(!S.layer||!S.map.hasLayer(S.layer))return;const m=merc(e.latlng.lng,e.latlng.lat),x=m[0]-S.O[0],y=m[1]-S.O[1];
@@ -758,7 +782,7 @@ function buildMap(){
   S.layer=new CanvasLayer(S.parcels,parcelStyle).addTo(S.map);
   S.ctrl.addOverlay(S.zoneLayer,"FEMA flood zones");S.ctrl.addOverlay(S.layer,"Parcels");
   S.map.fitBounds([[S.bb[1],S.bb[0]],[S.bb[3],S.bb[2]]]);
-  $("mapnote").textContent="Color shows exposure in the selected scenario and year. Select a parcel for details.";
+  $("mapnote").textContent="Select a parcel for details. Switch views to shade parcels by tax at risk.";
   setTimeout(()=>{S.map.invalidateSize();S.layer.redraw();S.zoneLayer.redraw()},50);
 }
 function openParcel(p,ll){if(!S.map)return;S.sel=p;S.layer.redraw();
@@ -768,7 +792,8 @@ function exposureClass(p,pr){const s=parcelState(p,S.scen,S.year,pr);if(!s)retur
   if(s.depth>3)return"d3";if(s.depth>1)return"d1";if(s.depth>0)return"d0";return"none"}
 function styleMap(){
   const pr=P();S.colors={chronic:cssVar("--chronic"),d3:cssVar("--d3"),d1:cssVar("--d1"),d0:cssVar("--d0"),none:"#9aa3ab"};
-  for(const p of S.parcels)p.cls=exposureClass(p,pr);
+  for(const p of S.parcels){p.cls=exposureClass(p,pr);p.taxc=0}
+  if(S.results)for(const x of S.results.rows)x.p.taxc=taxClass(x.d);
   if(S.layer)S.layer.redraw();
 }
 function popup(p){const pr=P();const s=parcelState(p,S.scen,S.year,pr),s0=parcelState(p,S.scen,2020,pr);const m=parcelMoney(p,s,pr),m0=parcelMoney(p,s0,pr);
@@ -789,18 +814,18 @@ function reportMap(pr){
   const path=c=>{const xy=c.xy,rg=c.rg;let d="",s0=0;for(let r=0;r<rg.length;r++){const e=rg[r];let lx=null,ly=null;
     for(let i=s0;i<e;i++){const x=pad+ox+(xy[2*i]-x0)*sc,y=H-pad-(xy[2*i+1]-y0)*sc;if(i>s0&&i<e-1&&Math.abs(x-lx)<.6&&Math.abs(y-ly)<.6)continue;d+=(i===s0?"M":"L")+x.toFixed(1)+" "+y.toFixed(1);lx=x;ly=y}d+="Z";s0=e}return d};
   let out=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="#f7f9f8"/>`;
-  out+=`<path d="${S.zones.filter(z=>z.kind!=="X02").map(path).join("")}" fill="${PRINT.zone}" fill-opacity=".12" stroke="none"/>`;
-  const groups={none:[],d0:[],d1:[],d3:[],chronic:[]};
-  for(const p of S.parcels)groups[p.cls||"none"].push(path(p));
-  out+=`<path d="${groups.none.join("")}" fill="${PRINT.none}" stroke="#c4c9ce" stroke-width=".25"/>`;
-  for(const k of["d0","d1","d3","chronic"])if(groups[k].length)out+=`<path d="${groups[k].join("")}" fill="${PRINT[k]}" stroke="#ffffff" stroke-width=".25"/>`;
+  out+=`<path d="${S.zones.filter(z=>z.kind!=="X02").map(path).join("")}" fill="none" stroke="${PRINT.zone}" stroke-width=".8" stroke-dasharray="4 3"/>`;
+  const groups=[[],[],[],[],[],[]];
+  for(const p of S.parcels)groups[p.taxc||0].push(path(p));
+  out+=`<path d="${groups[0].join("")}" fill="${PRINT.none}" stroke="#c4c9ce" stroke-width=".25"/>`;
+  for(let k=1;k<=5;k++)if(groups[k].length)out+=`<path d="${groups[k].join("")}" fill="${TAXC[k]}" stroke="#ffffff" stroke-width=".25"/>`;
   return out+"</svg>";
 }
 function buildReport(){
   if(!S.results)return;const pr=P();const r=S.results;const b=breakdown(r,pr);const now=new Date();
   const years=[2030,2040,2050,2060,2070,2080,2090,2100];
   const rowsTop=r.rows.slice().sort((a,b)=>b.d-a.d).slice(0,25);
-  const partMax=Math.max(1,...Object.values(b.parts).map(Math.abs));const partCol={tidal:PRINT.chronic,disc:"#c25e00",reas:PRINT.d3};
+  const partMax=Math.max(1,...Object.values(b.parts).map(Math.abs));const partCol={tidal:PRINT.chronic,disc:"#7f77dd",reas:"#534ab7"};
   const useTop=b.uses.slice(0,8);const useMax=Math.max(1,...useTop.map(e=>e[1]));
   const npvAll=S.traj.map(t=>npvFrom(t,pr));
   const st=SLR_FALLBACK[S.station];
@@ -816,7 +841,7 @@ function buildReport(){
   </div>
   <p>Under the NOAA ${esc(SCEN[S.scen])} scenario, sea level at the ${st.name} gauge is projected to be ${slrFt(S.scen,S.year).toFixed(2)} ft above its 2005 level by ${S.year}. In ${esc(S.townName)}, that rise and the matching growth in inland flooding would add about ${money(r.tot)} a year to the property tax revenue at risk, on top of ${money(r.base)} a year already at risk from today's flood hazard.</p>
   <div class="rmap">${reportMap(pr)}</div>
-  <div class="legendr"><span><i style="background:${PRINT.chronic}"></i>Below future high tide</span><span><i style="background:${PRINT.d3}"></i>1% flood depth over 3 ft</span><span><i style="background:${PRINT.d1}"></i>1 to 3 ft</span><span><i style="background:${PRINT.d0}"></i>Under 1 ft</span><span><i style="background:${PRINT.none};border:1px solid #c4c9ce"></i>Not exposed</span><span><i style="background:${PRINT.zone};opacity:.3"></i>FEMA 1% flood zone (today)</span></div>
+  <div class="legendr"><b style="color:#20326e">Added tax at risk / yr:</b>${["&lt;$250","$250–1K","$1K–5K","$5K–20K","&gt;$20K"].map((l,i)=>`<span><i style="background:${TAXC[i+1]}"></i>${l}</span>`).join("")}<span><i style="background:${PRINT.none};border:1px solid #c4c9ce"></i>None</span><span><i style="border:1px dashed ${PRINT.zone};background:none"></i>FEMA 1% flood zone (today)</span></div>
 
   <h2>1. Tax revenue at risk over time</h2>
   <div class="rchart"><svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg">${chartSVG(S.traj,S.scen,S.year,{grid:"#e1e5e8",text:"#5b6765",other:"#8a949c",sel:"#b42318",mark:"#1f73ae"})}</svg></div>
@@ -828,7 +853,7 @@ function buildReport(){
   ${(()=>{const img=typeof floodReportImage==="function"?floodReportImage():null;const A=F&&F.acres;if(!img&&!A)return"";
     return `<h2 class="pb">2. Flood extent and depth</h2>
     ${img?`<div class="rmap"><img src="${img}" alt="Modeled flood extent and depth in ${esc(S.townName)}, ${esc(SCEN[S.scen])} ${S.year}" style="display:block;width:100%;height:auto"></div>
-    <div class="legendr"><span><i style="background:${PRINT.chronic}"></i>Below future high tide</span><span><i style="background:${PRINT.d3}"></i>1% flood depth over 3 ft</span><span><i style="background:${PRINT.d1}"></i>1 to 3 ft</span><span><i style="background:${PRINT.d0}"></i>Under 1 ft</span><span><i style="background:#e4e8eb"></i>Parcel land, not flooded</span></div>`:""}
+    <div class="legendr"><span><i style="background:${HATCH}"></i>Below future high tide</span><span><i style="background:${PRINT.d3}"></i>1% flood depth over 3 ft</span><span><i style="background:${PRINT.d1}"></i>1 to 3 ft</span><span><i style="background:${PRINT.d0}"></i>Under 1 ft</span><span><i style="background:#e4e8eb"></i>Parcel land, not flooded</span></div>`:""}
     ${A?`<table><thead><tr><th>Acres of parcel land</th>${A.map(d=>`<th class="n">${d.y}</th>`).join("")}</tr></thead><tbody>
       <tr><td>Below high tide</td>${A.map(d=>`<td class="n">${num(d.a[1])}</td>`).join("")}</tr>
       <tr><td>1% flood, over 3 ft</td>${A.map(d=>`<td class="n">${num(d.a[4])}</td>`).join("")}</tr>
@@ -892,6 +917,13 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")$("report").classLis
 let deb;document.querySelectorAll(".params input").forEach(i=>i.addEventListener("input",()=>{clearTimeout(deb);deb=setTimeout(recompute,250)}));
 setupSort();
 $("play").onclick=()=>togglePlay();
+S.view="water";
+$("mapview").onclick=e=>{const b=e.target.closest("button");if(!b)return;S.view=b.dataset.v;
+  [...$("mapview").children].forEach(x=>x.setAttribute("aria-pressed",x===b));
+  document.querySelector(".lgd").classList.toggle("view-tax",S.view==="tax");
+  $("lgTaxTitle").textContent=S.view==="tax"?"Parcel fill: added tax / yr":"Parcel outline: added tax / yr";
+  $("mapexplain").textContent=S.view==="tax"?"Parcels are shaded by the added annual tax at risk for the selected scenario and year. Flood extent is shown faintly underneath.":"Blue shading is modeled flood extent and depth on 1 m lidar ground for the selected scenario and year. Parcels are outlined by the added annual tax at risk, judged at each parcel's buildings.";
+  if(typeof floodRender==="function")floodRender();if(S.layer)S.layer.redraw()};
 loadTowns();
 $("splashProceedBtn").onclick=()=>{$("splashScreen").hidden=true;$("town").focus()};
 $("splashProceedBtn").focus();
