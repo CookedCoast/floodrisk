@@ -757,6 +757,11 @@
    "town": "West Haven",
    "built": "2026-11-04",
    "tiles": 127
+  },
+  "westbrook": {
+   "town": "Westbrook",
+   "built": "2026-11-04",
+   "tiles": 191
   }
  }
 }
