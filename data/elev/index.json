@@ -360,6 +360,66 @@
    "built": "2026-11-04",
    "parcels": 10957,
    "points": 10657
+  },
+  "haddam": {
+   "town": "Haddam",
+   "built": "2026-11-04",
+   "parcels": 4421,
+   "points": 4421
+  },
+  "hamden": {
+   "town": "Hamden",
+   "built": "2026-11-04",
+   "parcels": 16750,
+   "points": 16750
+  },
+  "hampton": {
+   "town": "Hampton",
+   "built": "2026-11-04",
+   "parcels": 1230,
+   "points": 1229
+  },
+  "hartford": {
+   "town": "Hartford",
+   "built": "2026-11-04",
+   "parcels": 28529,
+   "points": 19127
+  },
+  "hartland": {
+   "town": "Hartland",
+   "built": "2026-11-04",
+   "parcels": 1110,
+   "points": 1110
+  },
+  "harwinton": {
+   "town": "Harwinton",
+   "built": "2026-11-04",
+   "parcels": 3369,
+   "points": 3369
+  },
+  "hebron": {
+   "town": "Hebron",
+   "built": "2026-11-04",
+   "parcels": 4462,
+   "points": 4243
+  },
+  "kent": {
+   "town": "Kent",
+   "built": "2026-11-04",
+   "parcels": 2035,
+   "points": 2035
+  },
+  "killingly": {
+   "town": "Killingly",
+   "built": "2026-11-04",
+   "parcels": 7928,
+   "points": 7661
+  },
+  "killingworth": {
+   "town": "Killingworth",
+   "built": "2026-11-04",
+   "parcels": 3153,
+   "points": 3153
   }
  }
 }
