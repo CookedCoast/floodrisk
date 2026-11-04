@@ -668,14 +668,18 @@ const CanvasLayer=window.L?L.Layer.extend({
     const vx0=-ox/k,vx1=(size.x-ox)/k,vy0=(oy-size.y)/k,vy1=oy/k;const groups=new Map();
     for(const it of this._items){const b=it.mb;if(b[2]<vx0||b[0]>vx1||b[3]<vy0||b[1]>vy1)continue;const st=this._styleOf(it,z);if(!st)continue;
       let g=groups.get(st.key);if(!g){g={st,items:[]};groups.set(st.key,g)}g.items.push(it)}
-    for(const{st,items}of[...groups.values()].sort((a,b)=>a.st.z-b.st.z)){ctx.beginPath();
+    // Fill in batches of 50 shapes: one giant path rasterizes ~40x slower in Chrome (627 ms vs 16 ms for Groton).
+    for(const{st,items}of[...groups.values()].sort((a,b)=>a.st.z-b.st.z)){
+      if(st.fill)ctx.fillStyle=st.fill;if(st.stroke){ctx.strokeStyle=st.stroke;ctx.lineWidth=st.sw}
+      const flush=()=>{if(st.fill){ctx.globalAlpha=st.fa;ctx.fill()}if(st.stroke){ctx.globalAlpha=st.sa;ctx.stroke()}ctx.beginPath()};
+      ctx.beginPath();let n=0;
       for(const it of items){const xy=it.xy,rg=it.rg,b=it.mb;
-        if((b[2]-b[0])*k<1.2&&(b[3]-b[1])*k<1.2){ctx.rect(ox+k*b[0],oy-k*b[3],1.2,1.2);continue}
-        let s0=0;for(let r=0;r<rg.length;r++){const e=rg[r];let lx=ox+k*xy[2*s0],ly=oy-k*xy[2*s0+1];ctx.moveTo(lx,ly);
+        if((b[2]-b[0])*k<1.2&&(b[3]-b[1])*k<1.2)ctx.rect(ox+k*b[0],oy-k*b[3],1.2,1.2);
+        else{let s0=0;for(let r=0;r<rg.length;r++){const e=rg[r];let lx=ox+k*xy[2*s0],ly=oy-k*xy[2*s0+1];ctx.moveTo(lx,ly);
           for(let i=s0+1;i<e;i++){const x=ox+k*xy[2*i],y=oy-k*xy[2*i+1];if(i<e-1&&Math.abs(x-lx)<.6&&Math.abs(y-ly)<.6)continue;ctx.lineTo(x,y);lx=x;ly=y}
           ctx.closePath();s0=e}}
-      if(st.fill){ctx.globalAlpha=st.fa;ctx.fillStyle=st.fill;ctx.fill()}
-      if(st.stroke){ctx.globalAlpha=st.sa;ctx.strokeStyle=st.stroke;ctx.lineWidth=st.sw;ctx.stroke()}}
+        if(++n%50===0)flush()}
+      flush()}
     ctx.globalAlpha=1}
 }):null;
 function parcelStyle(p,z){
