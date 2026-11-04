@@ -527,6 +527,11 @@
    "town": "Norwalk",
    "built": "2026-11-04",
    "tiles": 291
+  },
+  "old-lyme": {
+   "town": "Old Lyme",
+   "built": "2026-11-04",
+   "tiles": 233
   }
  }
 }
