@@ -467,6 +467,11 @@
    "town": "Naugatuck",
    "built": "2026-11-04",
    "tiles": 155
+  },
+  "new-britain": {
+   "town": "New Britain",
+   "built": "2026-11-04",
+   "tiles": 97
   }
  }
 }
