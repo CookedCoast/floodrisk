@@ -525,7 +525,7 @@ async function analyze(){
     log("Elevation found for "+num(got)+" of "+num(need.length)+" parcels","ok");prog(1);
     log("Done. Change the scenario and year to compare.","ok");
     floodReset();buildMap();recompute();$("csv").disabled=false;$("rep").disabled=false;$("play").disabled=false;
-    floodFetchView();floodTownStart();
+    floodFetchView().finally(floodTownStart);
   }catch(e){log("Analysis stopped: "+e.message+". Try again in a minute.","e")}
   $("run").disabled=false;
 }

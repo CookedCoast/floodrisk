@@ -41,7 +41,7 @@ async function fetchDEM(ext, w, h, pr) {
     bbox: ext.map((v) => v.toFixed(2)).join(","), bboxSR: "3857", imageSR: "3857", size: `${w},${h}`,
     format: "png32", transparent: "true", interpolation: "RSP_BilinearInterpolation",
     renderingRule: JSON.stringify(demRule(loM, stepM)), f: "json" });
-  const meta = await getJSON(DEM_SVC, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() }, 2);
+  const meta = await getJSON(DEM_SVC, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() }, 3);
   if (!meta.href) throw new Error("no image");
   const blob = await (await fetch(meta.href)).blob();
   const bm = await createImageBitmap(blob);
@@ -157,7 +157,7 @@ async function floodTownGrid() {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (const p of S.parcels) { const b = p.mb; if (b[0] < x0) x0 = b[0]; if (b[1] < y0) y0 = b[1]; if (b[2] > x1) x1 = b[2]; if (b[3] > y1) y1 = b[3]; }
   const ext = [x0 + S.O[0], y0 + S.O[1], x1 + S.O[0], y1 + S.O[1]];
-  const k = 1600 / Math.max(ext[2] - ext[0], ext[3] - ext[1]);
+  const k = 1200 / Math.max(ext[2] - ext[0], ext[3] - ext[1]);
   const w = Math.max(64, Math.round((ext[2] - ext[0]) * k)), h = Math.max(64, Math.round((ext[3] - ext[1]) * k));
   const g = await fetchDEM(ext, w, h, pr);
   if (!g) return null;
@@ -176,8 +176,11 @@ async function floodTownGrid() {
 }
 async function floodTownStart() {
   $("acresChart").innerHTML = ""; $("acresNote").textContent = "Loading town elevation grid…";
-  try { F.town = await floodTownGrid(); }
-  catch (e) { F.town = null; }
+  const town = S.townName;
+  for (let attempt = 0; attempt < 2 && town === S.townName; attempt++) {
+    try { F.town = await floodTownGrid(); break; } catch (e) { F.town = null; }
+  }
+  if (town !== S.townName) return;
   if (!F.town) { $("acresNote").textContent = "Flooded area could not be computed right now."; return; }
   floodAcres();
 }
