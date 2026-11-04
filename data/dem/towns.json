@@ -762,6 +762,11 @@
    "town": "Westbrook",
    "built": "2026-11-04",
    "tiles": 191
+  },
+  "weston": {
+   "town": "Weston",
+   "built": "2026-11-04",
+   "tiles": 164
   }
  }
 }
