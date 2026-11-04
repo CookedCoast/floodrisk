@@ -107,6 +107,11 @@
    "town": "Barkhamsted",
    "built": "2026-11-04",
    "tiles": 123
+  },
+  "beacon-falls": {
+   "town": "Beacon Falls",
+   "built": "2026-11-04",
+   "tiles": 150
   }
  }
 }
