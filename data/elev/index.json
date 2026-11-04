@@ -720,6 +720,66 @@
    "built": "2026-11-04",
    "parcels": 1538,
    "points": 1538
+  },
+  "salem": {
+   "town": "Salem",
+   "built": "2026-11-04",
+   "parcels": 2051,
+   "points": 2051
+  },
+  "salisbury": {
+   "town": "Salisbury",
+   "built": "2026-11-04",
+   "parcels": 2803,
+   "points": 2803
+  },
+  "scotland": {
+   "town": "Scotland",
+   "built": "2026-11-04",
+   "parcels": 906,
+   "points": 906
+  },
+  "seymour": {
+   "town": "Seymour",
+   "built": "2026-11-04",
+   "parcels": 6652,
+   "points": 6182
+  },
+  "sharon": {
+   "town": "Sharon",
+   "built": "2026-11-04",
+   "parcels": 2500,
+   "points": 2492
+  },
+  "shelton": {
+   "town": "Shelton",
+   "built": "2026-11-04",
+   "parcels": 16402,
+   "points": 16075
+  },
+  "sherman": {
+   "town": "Sherman",
+   "built": "2026-11-04",
+   "parcels": 2669,
+   "points": 2667
+  },
+  "simsbury": {
+   "town": "Simsbury",
+   "built": "2026-11-04",
+   "parcels": 10610,
+   "points": 10606
+  },
+  "somers": {
+   "town": "Somers",
+   "built": "2026-11-04",
+   "parcels": 3890,
+   "points": 3890
+  },
+  "south-windsor": {
+   "town": "South Windsor",
+   "built": "2026-11-04",
+   "parcels": 11206,
+   "points": 10942
   }
  }
 }
