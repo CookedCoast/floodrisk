@@ -12,10 +12,15 @@ It is a static site (`index.html` + `logo.svg`) with no build step. Each time a 
 | Flood zones and base flood elevations | FEMA National Flood Hazard Layer |
 | Ground elevation (1 m lidar) | USGS 3DEP elevation service |
 | Sea level rise scenarios (2022 Interagency) | NOAA CO-OPS, Bridgeport and New London gauges |
+| Building footprints | CT 2D Building Footprints (ArcGIS) |
+
+## Flood extent and depth
+
+The map shades modeled flood extent and depth for the selected scenario and year, and a chart shows flooded parcel acres by decade. Elevation for the map view comes from the USGS 3DEP image service encoded in a PNG (`flood.js`); the browser compares it with the same water levels used for parcels, so changing the year or pressing Play needs no new downloads.
 
 ## Saved elevations
 
-Sampling lidar elevation for thousands of parcels is the slowest part of an analysis, so each town's parcel elevations are saved in `data/elev/<town>.json` and the app requests only points that are missing. The files are built by the **Build saved elevations** GitHub Action (`.github/workflows/elevations.yml`, script `scripts/build-elevations.mjs`):
+Sampling lidar elevation for thousands of parcels and buildings is the slowest part of an analysis, so each town's parcel elevations are saved in `data/elev/<town>.json`, and each building's point, footprint area and ground elevation in `data/bldg/<town>.json`. The app requests only points that are missing. The files are built by the **Build saved elevations** GitHub Action (`.github/workflows/elevations.yml`, script `scripts/build-elevations.mjs`):
 
 - Run it from the Actions tab for all towns, or for a comma-separated list of towns. Tick *force* to rebuild towns that already have files.
 - It refreshes every town quarterly. It stops starting new towns after five hours and commits progress every ten towns, so a run that ends early resumes where it left off.
@@ -26,6 +31,7 @@ Sampling lidar elevation for thousands of parcels is the slowest part of an anal
 - Land below future mean higher high water is treated as permanently lost (only land that is dry today counts).
 - Coastal flood elevations (FEMA BFE or the town's coastal still-water elevation) rise one-for-one with sea level after 2020.
 - Riverine flood elevations rise with a scenario-scaled climate allowance.
+- Buildings from the CT 2D Building Footprints layer are matched to parcels; each building's own ground elevation sets its flood depth and tidal loss, with the parcel's building value split by footprint area. Land loss uses the parcel's ground points.
 - Building damage uses the USACE generic depth–damage curve (one story, no basement).
 - Tax at risk = assessed value lost to tide + market discount on newly exposed parcels + annualized post-flood reassessment, reported as the change from today's exposure.
 
