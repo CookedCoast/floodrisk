@@ -677,6 +677,11 @@
    "town": "Stratford",
    "built": "2026-11-04",
    "tiles": 330
+  },
+  "suffield": {
+   "town": "Suffield",
+   "built": "2026-11-04",
+   "tiles": 647
   }
  }
 }
