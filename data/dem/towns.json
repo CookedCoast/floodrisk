@@ -627,6 +627,11 @@
    "town": "Shelton",
    "built": "2026-11-04",
    "tiles": 257
+  },
+  "sherman": {
+   "town": "Sherman",
+   "built": "2026-11-04",
+   "tiles": 168
   }
  }
 }
