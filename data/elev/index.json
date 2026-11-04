@@ -780,6 +780,66 @@
    "built": "2026-11-04",
    "parcels": 11206,
    "points": 10942
+  },
+  "southbury": {
+   "town": "Southbury",
+   "built": "2026-11-04",
+   "parcels": 10190,
+   "points": 8519
+  },
+  "southington": {
+   "town": "Southington",
+   "built": "2026-11-04",
+   "parcels": 19009,
+   "points": 18218
+  },
+  "sprague": {
+   "town": "Sprague",
+   "built": "2026-11-04",
+   "parcels": 1268,
+   "points": 1268
+  },
+  "stafford": {
+   "town": "Stafford",
+   "built": "2026-11-04",
+   "parcels": 5694,
+   "points": 5371
+  },
+  "stamford": {
+   "town": "Stamford",
+   "built": "2026-11-04",
+   "parcels": 25717,
+   "points": 25717
+  },
+  "sterling": {
+   "town": "Sterling",
+   "built": "2026-11-04",
+   "parcels": 1816,
+   "points": 1816
+  },
+  "stonington": {
+   "town": "Stonington",
+   "built": "2026-11-04",
+   "parcels": 10253,
+   "points": 10181
+  },
+  "stratford": {
+   "town": "Stratford",
+   "built": "2026-11-04",
+   "parcels": 21347,
+   "points": 19664
+  },
+  "suffield": {
+   "town": "Suffield",
+   "built": "2026-11-04",
+   "parcels": 6420,
+   "points": 6420
+  },
+  "thomaston": {
+   "town": "Thomaston",
+   "built": "2026-11-04",
+   "parcels": 3337,
+   "points": 3337
   }
  }
 }
