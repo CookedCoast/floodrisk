@@ -732,6 +732,11 @@
    "town": "Warren",
    "built": "2026-11-04",
    "tiles": 0
+  },
+  "washington": {
+   "town": "Washington",
+   "built": "2026-11-04",
+   "tiles": 0
   }
  }
 }
