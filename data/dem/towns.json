@@ -222,6 +222,11 @@
    "town": "Cornwall",
    "built": "2026-11-04",
    "tiles": 0
+  },
+  "coventry": {
+   "town": "Coventry",
+   "built": "2026-11-04",
+   "tiles": 0
   }
  }
 }
