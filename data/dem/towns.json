@@ -137,6 +137,11 @@
    "town": "Bloomfield",
    "built": "2026-11-04",
    "tiles": 482
+  },
+  "bolton": {
+   "town": "Bolton",
+   "built": "2026-11-04",
+   "tiles": 8
   }
  }
 }
