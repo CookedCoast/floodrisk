@@ -107,7 +107,13 @@ table{border-collapse:collapse;width:100%;font-size:.86rem}
 th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
 th{position:sticky;top:0;background:var(--panel);font-size:.74rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--head);border-bottom:1.5px solid var(--head)}
 td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
-tbody tr{cursor:pointer} tbody tr:hover{background:var(--wash)}
+#tbl tbody tr{cursor:pointer} #tbl tbody tr:hover,#tbl tbody tr:focus-visible{background:var(--wash)}
+th.sort{cursor:pointer;user-select:none}
+th.sort button{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit}
+th.sort button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+th.sort .ar{font-size:.9em;opacity:.35}
+th.sort[aria-sort] .ar{opacity:1}
+.ledgernote{font-size:.82rem;color:var(--muted);margin-top:8px}
 .pill{display:inline-block;border-radius:99px;padding:1px 8px;font-size:.74rem;font-weight:700;white-space:nowrap}
 .pill.tidal{background:#dfe5f6;color:#20326e}.pill.coastal{background:#dcebfb;color:#1b4f8f}.pill.riverine{background:#fde8d4;color:#8a3d00}
 .empty{color:var(--muted);padding:26px 0;text-align:center;white-space:normal}
@@ -159,7 +165,9 @@ tbody tr{cursor:pointer} tbody tr:hover{background:var(--wash)}
 .page th{font-size:7.5pt;text-transform:uppercase;letter-spacing:.05em;color:#20326e;border-bottom:1.5px solid #20326e}
 .page td.n,.page th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .page tr{break-inside:avoid;cursor:default}
-.page tr.sel td{background:#eef3f8;font-weight:700}
+.page td{color:#212529;background:#fff}
+.page tbody tr:not(.sel):hover td{background:#fff}
+.page tr.sel td{background:#eef3f8;color:#20326e;font-weight:700}
 .rbarrow{display:grid;grid-template-columns:2.1in 1fr 1.1in;gap:8px;align-items:center;font-size:9pt;padding:2px 0}
 .rbarrow .track{background:#eef1f0;height:12px;border-radius:2px;overflow:hidden}
 .rbarrow .fill{height:100%}
@@ -269,10 +277,11 @@ tbody tr{cursor:pointer} tbody tr:hover{background:var(--wash)}
   </section>
 
   <section class="card">
-    <header><h3>Parcel ledger</h3><button id="csv" disabled>Export exposed parcels (CSV)</button><p>The 150 parcels with the largest added annual tax at risk. Select a row to find it on the map.</p></header>
+    <header><h3>Parcel ledger</h3><button id="csv" disabled>Export exposed parcels (CSV)</button><p>Exposed parcels in the selected scenario and year. Select a column heading to sort, or a row to find the parcel on the map. Dollar values are in today's dollars.</p></header>
     <div class="tblwrap"><table id="tbl"><thead><tr>
-      <th>Parcel ID</th><th>Location</th><th>Use</th><th class="n">Assessed</th><th class="n">Ground (ft)</th><th>Hazard</th><th class="n">Depth (ft)</th><th class="n">Lost to tide</th><th class="n">1% flood damage</th><th class="n">Added tax / yr</th>
+      <th class="sort" data-k="id">Parcel ID</th><th class="sort" data-k="loc">Location</th><th class="sort" data-k="use">Use</th><th class="sort n" data-k="assessed">Assessed</th><th class="sort n" data-k="elev">Ground (ft)</th><th class="sort" data-k="haz">Hazard</th><th class="sort n" data-k="depth">Depth (ft)</th><th class="sort n" data-k="tide">Lost to tide</th><th class="sort n" data-k="dmg">1% flood damage</th><th class="sort n" data-k="d">Added tax / yr</th>
     </tr></thead><tbody><tr><td colspan="10" class="empty">No town analyzed yet.</td></tr></tbody></table></div>
+    <div class="ledgernote" id="ledgernote"></div>
   </section>
 
   <section class="card">
@@ -283,7 +292,7 @@ tbody tr{cursor:pointer} tbody tr:hover{background:var(--wash)}
       <p><b>Sea level rise.</b> <a href="https://tidesandcurrents.noaa.gov/sltrends/" target="_blank" rel="noopener">NOAA 2022 Interagency</a> relative sea level scenarios load for the nearer of the Bridgeport and New London gauges, relative to 2005. Mean higher high water is interpolated between those gauges. Land below future high tide counts as permanently lost only if it is dry today.</p>
       <p><b>Coastal flooding.</b> Parcels in FEMA VE or coastal AE zones use their base flood elevation; other parcels within reach of a VE zone use the town's coastal still-water elevation. Both rise one-for-one with sea level after 2020. This bathtub approach ignores wave attenuation and flood protection.</p>
       <p><b>Inland flooding.</b> Parcels in riverine A, AE, AO and AH zones from the <a href="https://hazards.fema.gov/femaportal/wps/portal/NFHLWMS" target="_blank" rel="noopener">FEMA National Flood Hazard Layer</a> use the base flood elevation (or zone depth) plus a rise in flood elevation that grows with the scenario. Parcels in the 0.2% annual chance zone begin to flood once that rise exceeds their assumed margin.</p>
-      <p><b>From depth to dollars.</b> Building damage follows the USACE generic depth–damage curve for one-story homes without basements, applied to depth above the first floor. Tax at risk adds assessed value lost to permanent inundation, a market discount on newly exposed parcels, and the annualized reassessment after a design flood.</p>
+      <p><b>From depth to dollars.</b> Building damage follows the USACE generic depth–damage curve for one-story homes without basements, applied to depth above the first floor. Tax at risk adds assessed value lost to permanent inundation, a market discount on newly exposed parcels, and the annualized reassessment after a design flood. All dollar figures are in today's dollars: assessments and the mill rate stay at current values, with no inflation or appreciation, so the cumulative figure uses a real discount rate.</p>
       <p><b>Use with care.</b> This is a screening tool. A point inside each parcel stands in for the building location, elevations are bare-earth, and the assumptions panel holds values to replace with local figures. Connecticut's planning standard is 0.5 m (20 in) of sea level rise by 2050 (<a href="https://portal.ct.gov/deep/coastal-resources/coastal-hazards/sea-level-rise" target="_blank" rel="noopener">CGS 25-68o</a>).</p>
     </div>
   </section>
@@ -540,10 +549,10 @@ function recompute(){
   S.traj=SCEN.map((_,i)=>trajectory(i,pr));
   const L=levy(pr);S.levy=L;S.npv=npvFrom(S.traj[S.scen],pr);
   $("mtitle").textContent=S.townName;$("msub").textContent=`${SCEN[S.scen]} scenario, ${S.year}. Results show the change from today's flood exposure.`;
-  $("k_tax").textContent=money(r.tot);$("k_tax_s").textContent=`${money(r.base)} already at risk today`;
+  $("k_tax").textContent=money(r.tot);$("k_tax_s").textContent=`Today's dollars · ${money(r.base)} already at risk now`;
   $("k_pct").textContent=L?(r.tot/L*100).toFixed(2)+"%":"—";$("k_pct_s").textContent=`of ${money(L)} modeled annual levy`;
   $("k_n").textContent=num(r.n);$("k_n_s").textContent=`of ${num(S.parcels.length)} parcels`;
-  $("k_npv").textContent=money(S.npv);$("k_npv_s").textContent=`2026–2100 at ${(pr.npv*100).toFixed(1)}% discount`;
+  $("k_npv").textContent=money(S.npv);$("k_npv_s").textContent=`Present value, 2026–2100, ${(pr.npv*100).toFixed(1)}% real discount rate`;
   $("chart").innerHTML=chartSVG(S.traj,S.scen,S.year,{grid:"var(--line)",text:"var(--muted)",other:"var(--muted)",sel:"var(--loss)",mark:"var(--accent)"});
   drawMix(breakdown(r,pr));drawTable(r);styleMap();
 }
@@ -576,8 +585,18 @@ function drawMix(b){
   $("uses").innerHTML=top.length?top.map(([k,v])=>`<div class="r"><span title="${esc(k)}">${esc(k)}</span><div class="track"><i style="width:${v/um*100}%;background:var(--accent)"></i></div><span class="v">${money(v)}</span></div>`).join(""):`<div class="empty">No added exposure in this scenario and year.</div>`;
 }
 function hazardPill(s){if(!s)return"";if(s.tideShare>0)return`<span class="pill tidal">Tidal</span>`;if(s.depth>0)return`<span class="pill ${s.src.toLowerCase()}">${s.src}</span>`;return""}
+const SORT={k:"d",dir:-1};
+const SORTVAL={id:x=>String(x.p.a.Parcel_ID||""),loc:x=>String(x.p.a.Location||""),use:x=>x.p.useDesc,assessed:x=>x.p.assessed,elev:x=>x.p.elev,
+  haz:x=>x.s1.tideShare>0?"Tidal":(x.s1.depth>0?x.s1.src:"~"),depth:x=>x.s1.depth>0?x.s1.depth:-1,tide:x=>x.s1.tideShare,dmg:x=>x.m1.dmg,d:x=>x.d};
+function sortedRows(rows){const f=SORTVAL[SORT.k];const col=new Intl.Collator("en",{numeric:true,sensitivity:"base"});
+  return rows.slice().sort((a,b)=>{const va=f(a),vb=f(b);const c=typeof va==="string"?col.compare(va,vb):va-vb;return c*SORT.dir||(b.d-a.d)})}
+function setupSort(){document.querySelectorAll("#tbl th.sort").forEach(th=>{const label=th.textContent;th.innerHTML=`<button type="button">${label}<span class="ar" aria-hidden="true">↕</span></button>`;
+  th.querySelector("button").onclick=()=>{const k=th.dataset.k;if(SORT.k===k)SORT.dir*=-1;else{SORT.k=k;SORT.dir=(["id","loc","use","haz"].includes(k))?1:-1}if(S.results)drawTable(S.results);else markSort()}});markSort()}
+function markSort(){document.querySelectorAll("#tbl th.sort").forEach(th=>{const on=th.dataset.k===SORT.k;if(on)th.setAttribute("aria-sort",SORT.dir>0?"ascending":"descending");else th.removeAttribute("aria-sort");th.querySelector(".ar").textContent=on?(SORT.dir>0?"▲":"▼"):"↕"})}
 function drawTable(r){
-  const rows=r.rows.slice().sort((a,b)=>b.d-a.d).slice(0,150);const tb=$("tbl").querySelector("tbody");
+  markSort();
+  const all=sortedRows(r.rows),rows=all.slice(0,500);const tb=$("tbl").querySelector("tbody");
+  $("ledgernote").textContent=all.length>rows.length?`Showing the first ${num(rows.length)} of ${num(all.length)} exposed parcels in this sort order. The CSV export has all of them.`:all.length?`${num(all.length)} exposed parcels.`:"";
   if(!rows.length){tb.innerHTML=`<tr><td colspan="10" class="empty">No parcels exposed in this scenario and year.</td></tr>`;return}
   tb.innerHTML=rows.map((x,i)=>`<tr data-i="${i}" tabindex="0"><td>${esc(x.p.a.Parcel_ID)}</td><td>${esc(x.p.a.Location)}</td><td>${esc(x.p.useDesc)}</td><td class="n">${money(x.p.assessed)}</td><td class="n">${x.p.elev.toFixed(1)}</td><td>${hazardPill(x.s1)}</td><td class="n">${x.s1.depth>0?x.s1.depth.toFixed(1):"–"}</td><td class="n">${x.s1.tideShare>0?Math.round(x.s1.tideShare*100)+"%":"–"}</td><td class="n">${money(x.m1.dmg)}</td><td class="n"><b>${money(x.d)}</b></td></tr>`).join("");
   tb.querySelectorAll("tr").forEach(tr=>{const go=()=>{const p=rows[+tr.dataset.i].p;if(S.map&&p.lyr){S.map.fitBounds(p.lyr.getBounds(),{maxZoom:18});p.lyr.openPopup()}$("map").scrollIntoView({behavior:"smooth",block:"center"})};tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter")go()}});
@@ -647,10 +666,10 @@ function buildReport(){
   <div class="rhead"><div><div class="eyebrow">Flood risk and tax base report</div><h1>${esc(S.townName)}</h1><div class="small">Sea level rise and inland flood exposure of the grand list</div></div>
   <div class="meta">Prepared ${now.toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}<br>Scenario: NOAA 2022 ${esc(SCEN[S.scen])}, ${S.year}<br>Mill rate ${pr.mill} · ${st.name} tide gauge</div></div>
   <div class="rk">
-    <div><b class="red">${money(r.tot)}</b><span>Added annual tax at risk vs. today</span></div>
+    <div><b class="red">${money(r.tot)}</b><span>Added annual tax at risk vs. today, in today's dollars</span></div>
     <div><b>${S.levy?(r.tot/S.levy*100).toFixed(2)+"%":"—"}</b><span>Share of the ${money(S.levy)} modeled levy</span></div>
     <div><b>${num(r.n)}</b><span>Parcels newly exposed, of ${num(S.parcels.length)}</span></div>
-    <div><b>${money(S.npv)}</b><span>Cumulative loss 2026–2100, present value at ${(pr.npv*100).toFixed(1)}%</span></div>
+    <div><b>${money(S.npv)}</b><span>Cumulative loss 2026–2100, present value at ${(pr.npv*100).toFixed(1)}% real</span></div>
   </div>
   <p>Under the NOAA ${esc(SCEN[S.scen])} scenario, sea level at the ${st.name} gauge is projected to be ${slrFt(S.scen,S.year).toFixed(2)} ft above its 2005 level by ${S.year}. In ${esc(S.townName)}, that rise and the matching growth in inland flooding would add about ${money(r.tot)} a year to the property tax revenue at risk, on top of ${money(r.base)} a year already at risk from today's flood hazard.</p>
   <div class="rmap">${reportMap(pr)}</div>
@@ -661,7 +680,7 @@ function buildReport(){
   <table><thead><tr><th>Scenario</th>${years.map(y=>`<th class="n">${y}</th>`).join("")}<th class="n">PV to 2100</th></tr></thead><tbody>
   ${SCEN.map((s,i)=>`<tr${i===S.scen?' class="sel"':""}><td>${esc(s)}</td>${years.map(y=>`<td class="n">${money(S.traj[i][(y-2020)/10])}</td>`).join("")}<td class="n">${money(npvAll[i])}</td></tr>`).join("")}
   </tbody></table>
-  <p class="small">Added annual tax revenue at risk relative to 2020 exposure. Present value covers 2026–2100 at a ${(pr.npv*100).toFixed(1)}% discount rate.</p>
+  <p class="small">Added annual tax revenue at risk relative to 2020 exposure, in today's dollars: current assessments and the current mill rate are held constant, with no inflation or property appreciation. Present value sums 2026–2100 at a ${(pr.npv*100).toFixed(1)}% real discount rate.</p>
 
   <h2>2. Where the loss comes from</h2>
   <div class="two"><div>
@@ -716,6 +735,7 @@ $("run").onclick=analyze;$("csv").onclick=exportCSV;$("exempt").onchange=recompu
 $("btnPrint").onclick=()=>window.print();$("btnCloseReport").onclick=()=>$("report").classList.remove("open");
 document.addEventListener("keydown",e=>{if(e.key==="Escape")$("report").classList.remove("open")});
 let deb;document.querySelectorAll(".params input").forEach(i=>i.addEventListener("input",()=>{clearTimeout(deb);deb=setTimeout(recompute,250)}));
+setupSort();
 loadTowns();
 </script>
 </body>
