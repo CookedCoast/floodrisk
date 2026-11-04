@@ -737,6 +737,11 @@
    "town": "Washington",
    "built": "2026-11-04",
    "tiles": 0
+  },
+  "waterbury": {
+   "town": "Waterbury",
+   "built": "2026-11-04",
+   "tiles": 214
   }
  }
 }
