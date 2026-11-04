@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="geo.js"></script>
+<script src="model.js"></script>
 <style>
 :root{
   --navy:#20326e; --blue:#1f73ae; --green:#76b053;
@@ -75,6 +76,16 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .pbar{height:5px;background:var(--line);border-radius:3px;overflow:hidden}
 .pbar>i{display:block;height:100%;width:0;background:var(--green);transition:width .2s}
 details.sec summary{cursor:pointer;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--head);font-weight:700}
+.combo{position:relative}
+.combo input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line-2);border-radius:5px;padding:7px 9px 7px 30px;width:100%;min-width:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:8px 50%}
+.combo input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.combo ul{position:absolute;z-index:1200;left:0;right:0;top:calc(100% + 4px);margin:0;padding:4px 0;list-style:none;background:var(--panel);border:1px solid var(--line-2);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.18);max-height:300px;overflow-y:auto}
+.combo li[role=option]{padding:6px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.combo li[aria-selected=true]{background:var(--accent);color:var(--accent-ink)}
+.combo li.grp{padding:8px 12px 4px;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--head)}
+.combo li.none{padding:8px 12px;color:var(--muted)}
+.combo .tag{font-size:.68rem;font-weight:700;border-radius:99px;padding:1px 7px;background:#eef6e8;color:#3d6b1f}
+.combo li[aria-selected=true] .tag{background:rgba(255,255,255,.25);color:inherit}
 .info{all:unset;box-sizing:border-box;display:inline-grid;place-items:center;width:18px;height:18px;margin-left:6px;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent);font:700 11px/1 var(--font);cursor:pointer;vertical-align:1px;flex:none}
 .info:hover,.info[aria-expanded=true]{background:var(--accent);color:var(--accent-ink)}
 .info:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -105,6 +116,18 @@ main{padding-block:20px 40px;padding-left:24px;padding-right:max(24px,env(safe-a
 .chartwrap{overflow-x:auto}
 #chart{width:100%;min-width:520px;height:auto;display:block}
 #chart text{font:12px var(--font);fill:var(--muted)}
+.region{display:grid;gap:4px}
+.region .rr{all:unset;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,140px) minmax(0,1fr) 150px;gap:10px;align-items:center;padding:4px 6px;border-radius:5px;cursor:pointer;font-size:.88rem}
+.region .rr:hover,.region .rr:focus-visible{background:var(--wash)}
+.region .rr:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.region .rr.cur{background:var(--wash);box-shadow:inset 3px 0 0 var(--accent)}
+.region .rr .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.region .rr .tr{height:14px;background:var(--wash);border-radius:2px;overflow:hidden}
+.region .rr.cur .tr{background:var(--bg)}
+.region .rr .tr i{display:block;height:100%;background:var(--t3)}
+.region .rr .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2);font-size:.84rem}
+.region .rr .v small{color:var(--muted)}
+@media (max-width:600px){.region .rr{grid-template-columns:minmax(0,100px) minmax(0,1fr) 110px}}
 .mapwrap{position:relative}
 .seg2{display:inline-flex;border:1px solid var(--line-2);border-radius:5px;overflow:hidden}
 .seg2 button{border:0;border-radius:0;padding:6px 12px;font-size:.84rem;background:transparent}
@@ -264,7 +287,12 @@ th.sort[aria-sort] .ar{opacity:1}
 
   <div class="sec">
     <h2>Municipality</h2>
-    <label class="f" for="town">Town<select id="town"><option>Loading towns…</option></select></label>
+    <label class="f" for="townSearch">Town</label>
+    <div class="combo">
+      <input id="townSearch" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="townList" autocomplete="off" spellcheck="false" placeholder="Loading towns…" disabled>
+      <ul id="townList" role="listbox" aria-label="Towns" hidden></ul>
+    </div>
+    <select id="town" hidden aria-hidden="true" tabindex="-1"><option>Loading towns…</option></select>
     <div class="row"><button id="run" class="primary" disabled>Analyze town</button><button id="rep" disabled>Build report</button></div>
     <div class="pbar"><i id="prog"></i></div>
     <div class="status" id="log" aria-live="polite"><span class="note">Pick a town and select Analyze. Most towns load in seconds.</span></div>
@@ -315,6 +343,14 @@ th.sort[aria-sort] .ar{opacity:1}
   <section class="card">
     <header><h3>Tax revenue at risk over time</h3><p>Added annual property tax revenue at risk relative to today, for each NOAA 2022 scenario. The red line is the selected scenario.</p></header>
     <div class="chartwrap"><svg id="chart" viewBox="0 0 900 280" role="img" aria-label="Annual tax revenue at risk by year and scenario"></svg></div>
+  </section>
+
+  <section class="card" id="regionCard">
+    <header><h3>SECOG region comparison</h3>
+      <div class="seg2" id="regionMetric" role="group" aria-label="Compare by"><button type="button" data-m="pct" aria-pressed="true">Share of tax base</button><button type="button" data-m="usd" aria-pressed="false">Tax at risk / yr</button></div>
+      <p id="regionSub">Added tax revenue at risk in each SECOG town for the selected scenario and year. Select a town to analyze it.</p></header>
+    <div id="regionChart" class="region"><div class="empty">Loading the regional comparison…</div></div>
+    <p class="note" id="regionNote" style="margin:10px 0 0"></p>
   </section>
 
   <section class="split">
@@ -384,17 +420,6 @@ const SVC={
   fema:"https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query",
   slr:"https://api.tidesandcurrents.noaa.gov/dpapi/prod/webapi/product/slr_projections.json?station="
 };
-const SCEN=["Low","Intermediate-Low","Intermediate","Intermediate-High","High"];
-const SCEN_SHORT=["Low","Int-Low","Int","Int-High","High"];
-const RIVER_MULT=[0.5,0.75,1,1.5,2];
-const SLR_YEARS=[2005,2020,2030,2040,2050,2060,2070,2080,2090,2100];
-// NOAA 2022 Interagency scenarios (cm, relative to 2005). Used only if the live API cannot be reached.
-const SLR_FALLBACK={
-  "8467150":{name:"Bridgeport",lon:-73.1817,mhhw:3.48,s:{"Low":[0,9,16,22,29,34,38,42,46,49],"Intermediate-Low":[0,10,17,25,33,41,48,55,62,68],"Intermediate":[0,11,18,27,37,48,60,75,93,114],"Intermediate-High":[0,11,19,30,42,58,76,98,122,150],"High":[0,10,19,31,46,67,94,125,159,193]}},
-  "8461490":{name:"New London",lon:-72.0950,mhhw:1.21,s:{"Low":[0,9,16,23,29,35,39,42,46,50],"Intermediate-Low":[0,10,18,26,34,42,49,56,63,69],"Intermediate":[0,11,19,28,37,49,61,76,95,115],"Intermediate-High":[0,11,20,30,43,59,78,100,125,152],"High":[0,10,19,31,47,67,95,126,161,195]}}
-};
-// USACE EGM 01-03, one-story no basement: % structure damage by depth above first floor (ft)
-const DDF=[[-1,2.5],[0,13.4],[1,23.3],[2,32.1],[3,40.1],[4,47.1],[5,53.2],[6,58.6],[7,63.2],[8,67.2],[9,70.5],[10,73.2],[11,75.4],[12,77.2],[13,78.5],[14,79.5],[15,80.2],[16,80.7]];
 const FIELDS="OBJECTID,Parcel_ID,Location,Town_Name,Assessed_Total,Assessed_Land,Assessed_Building,Appraised_Building,Appraised_Outbuilding,State_Use,State_Use_Description,Living_Area,AYB,Land_Acres";
 const FT=3.28084;
 const PRINT={chronic:"#0c447c",d3:"#185fa5",d1:"#378add",d0:"#9ec3e6",none:"#e4e8eb",zone:"#1f73ae"};
@@ -432,26 +457,63 @@ async function pool(items,n,fn){let i=0;const out=new Array(items.length);
 /* ---------- geometry ---------- */
 /* polysOf, bboxOf, inRing, inGeom, ringArea, pointOn, ptKey and townSlug live in geo.js */
 function extraPoints(p,g){const b=p.bbox,out=[];for(const[cx,cy]of[[b[0],b[1]],[b[2],b[1]],[b[0],b[3]],[b[2],b[3]]]){const x=(p.pt[0]+cx)/2,y=(p.pt[1]+cy)/2;if(inGeom(x,y,g))out.push([x,y])}return out}
-/* compact geometry: Web Mercator metres relative to a town origin, stored in typed arrays */
-const R_E=6378137,PI_R=Math.PI*R_E;
-const merc=(lon,lat)=>[R_E*lon*Math.PI/180,R_E*Math.log(Math.tan(Math.PI/4+lat*Math.PI/360))];
-function compact(g,O){let n=0,rc=0;const ps=polysOf(g);for(const p of ps)for(const r of p){n+=r.length;rc++}
-  const xy=new Float32Array(n*2),rg=new Uint32Array(rc);let i=0,k=0,x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
-  for(const p of ps)for(const r of p){for(const c of r){const m=merc(c[0],c[1]);const dx=m[0]-O[0],dy=m[1]-O[1];xy[2*i]=dx;xy[2*i+1]=dy;i++;
-    if(dx<x0)x0=dx;if(dx>x1)x1=dx;if(dy<y0)y0=dy;if(dy>y1)y1=dy}rg[k++]=i}
-  return{xy,rg,mb:new Float32Array([x0,y0,x1,y1])}}
-function inCompact(x,y,c){let ins=false,s=0;const xy=c.xy;for(let r=0;r<c.rg.length;r++){const e=c.rg[r];
-  for(let i=s,j=e-1;i<e;j=i++){const xi=xy[2*i],yi=xy[2*i+1],xj=xy[2*j],yj=xy[2*j+1];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))ins=!ins}s=e}return ins}
-function metersBetween(a,b){const k=Math.cos(a[1]*Math.PI/180)*111320;return Math.hypot((a[0]-b[0])*k,(a[1]-b[1])*110540)}
 
 /* ---------- reference data ---------- */
+const REGION_COG="Southeastern CT";
 async function loadTowns(){
   try{
-    const j=await getJSON(SVC.parcels+"?where=1%3D1&outFields=Town_Name&returnDistinctValues=true&returnGeometry=false&orderByFields=Town_Name&f=json");
-    const towns=j.features.map(f=>f.attributes.Town_Name).filter(Boolean);
-    $("town").innerHTML=towns.map(t=>`<option value="${esc(t)}">${esc(prettyTown(t))}</option>`).join("");
-    const pref=towns.includes("Groton")?"Groton":towns[0];$("town").value=pref;$("run").disabled=false;
-  }catch(e){log("Could not reach the CT parcel service: "+e.message+". Check your connection and reload.","e");$("town").innerHTML="<option>Parcel service unavailable</option>"}
+    const j=await getJSON(SVC.parcels+"?where=1%3D1&outFields=Town_Name,COG&returnDistinctValues=true&returnGeometry=false&f=json");
+    const m=new Map();for(const f of j.features){const t=f.attributes.Town_Name;if(!t)continue;const r=m.get(t)||{raw:t,name:prettyTown(t),secog:false};if(f.attributes.COG===REGION_COG)r.secog=true;m.set(t,r)}
+    S.towns=[...m.values()].sort((a,b)=>a.name.localeCompare(b.name));
+    $("town").innerHTML=S.towns.map(t=>`<option value="${esc(t.raw)}">${esc(t.name)}</option>`).join("");
+    const pref=m.has("Groton")?"Groton":S.towns[0].raw;pickTown(pref,false);
+    $("townSearch").disabled=false;$("townSearch").placeholder=`Search ${S.towns.length} towns`;$("run").disabled=false;
+    if(typeof drawRegion==="function")drawRegion();
+  }catch(e){log("Could not reach the CT parcel service: "+e.message+". Check your connection and reload.","e");$("townSearch").placeholder="Parcel service unavailable"}
+}
+/* ---------- CT OPM mill rates (data.ct.gov "Mill Rates for FY 2014-2027") ---------- */
+const MILL_API="https://data.ct.gov/resource/emyx-j53e.json";
+async function loadMillRates(){
+  try{
+    const mx=await getJSON(`${MILL_API}?$select=max(fiscal_year)%20as%20fy`,{},2);const fy=mx[0].fy;
+    const rows=await getJSON(`${MILL_API}?fiscal_year=${fy}&$limit=2000`,{},2);S.mill={};S.millFY=fy;
+    for(const r of rows){if(r.service_district_code!==r.town_code)continue;const v=parseFloat(r.mill_rate_real_personal||r.mill_rate);if(isFinite(v))S.mill[r.municipality.trim().toLowerCase()]=v}
+  }catch(e){S.mill=null}
+  if(typeof drawRegion==="function")drawRegion();
+}
+const millFor=raw=>S.mill?S.mill[prettyTown(raw).toLowerCase()]:undefined;
+
+/* ---------- town search ---------- */
+function pickTown(raw,run){const t=(S.towns||[]).find(x=>x.raw===raw);if(!t)return;$("town").value=raw;$("townSearch").value=t.name;closeTownList();
+  if(typeof drawRegion==="function")drawRegion();
+  if(run&&!$("run").disabled)analyze()}
+function closeTownList(){$("townList").hidden=true;$("townSearch").setAttribute("aria-expanded","false");$("townSearch").removeAttribute("aria-activedescendant")}
+function renderTownList(q){
+  const ql=q.trim().toLowerCase(),all=S.towns||[];
+  const hit=t=>!ql||t.name.toLowerCase().includes(ql);
+  const sec=all.filter(t=>t.secog&&hit(t)),rest=all.filter(t=>!t.secog&&hit(t));
+  const opt=t=>`<li role="option" id="opt_${townSlug(t.raw)}" data-raw="${esc(t.raw)}" aria-selected="false">${esc(t.name)}${t.secog?'<span class="tag">SECOG</span>':""}</li>`;
+  let h="";if(sec.length)h+=`<li class="grp" role="presentation">SECOG region</li>`+sec.map(opt).join("");
+  if(rest.length)h+=`<li class="grp" role="presentation">${ql?"Other towns":"All other towns"}</li>`+rest.map(opt).join("");
+  if(!h)h=`<li class="none" role="presentation">No town matches “${esc(q)}”</li>`;
+  $("townList").innerHTML=h;$("townList").hidden=false;$("townSearch").setAttribute("aria-expanded","true");
+  const first=$("townList").querySelector('[role=option]');setActive(first);
+}
+function setActive(li){const box=$("townList");box.querySelectorAll('[aria-selected=true]').forEach(x=>x.setAttribute("aria-selected","false"));
+  if(!li){$("townSearch").removeAttribute("aria-activedescendant");return}
+  li.setAttribute("aria-selected","true");$("townSearch").setAttribute("aria-activedescendant",li.id);li.scrollIntoView({block:"nearest"})}
+function setupTownSearch(){
+  const inp=$("townSearch"),box=$("townList");
+  inp.addEventListener("focus",()=>{inp.select();renderTownList("")});
+  inp.addEventListener("input",()=>renderTownList(inp.value));
+  inp.addEventListener("keydown",e=>{
+    const opts=[...box.querySelectorAll('[role=option]')],cur=box.querySelector('[aria-selected=true]'),i=opts.indexOf(cur);
+    if(e.key==="ArrowDown"){e.preventDefault();if(box.hidden)renderTownList(inp.value);else setActive(opts[Math.min(opts.length-1,i+1)])}
+    else if(e.key==="ArrowUp"){e.preventDefault();setActive(opts[Math.max(0,i-1)])}
+    else if(e.key==="Enter"){e.preventDefault();if(!box.hidden&&cur)pickTown(cur.dataset.raw,true);else{const t=(S.towns||[]).find(x=>x.name.toLowerCase()===inp.value.trim().toLowerCase());if(t)pickTown(t.raw,true)}}
+    else if(e.key==="Escape"){const t=(S.towns||[]).find(x=>x.raw===$("town").value);if(t)inp.value=t.name;closeTownList()}});
+  box.addEventListener("mousedown",e=>{const li=e.target.closest('[role=option]');if(li){e.preventDefault();pickTown(li.dataset.raw,false)}});
+  inp.addEventListener("blur",()=>setTimeout(()=>{const t=(S.towns||[]).find(x=>x.raw===$("town").value);if(t&&document.activeElement!==inp)inp.value=t.name;closeTownList()},120));
 }
 async function loadSLR(stationId){
   const fb=SLR_FALLBACK[stationId];
@@ -461,13 +523,12 @@ async function loadSLR(stationId){
     throw new Error("incomplete");
   }catch(e){log("Using stored NOAA 2022 values for "+fb.name+" (live service did not respond)","act");return fb.s}
 }
-function slrFt(scen,year){const s=S.slr[SCEN[scen]];let i=SLR_YEARS.findIndex(y=>y>=year);if(i<=0)i=1;if(year>2100)i=SLR_YEARS.length-1;
-  const y0=SLR_YEARS[i-1],y1=SLR_YEARS[i];const v=s[i-1]+(s[i]-s[i-1])*Math.min(1,(year-y0)/(y1-y0));return v/30.48}
 
 /* ---------- pipeline ---------- */
 async function analyze(){
   const town=$("town").value;$("run").disabled=true;$("rep").disabled=true;$("log").innerHTML="";firstLog=false;prog(0);
-  S.townName=prettyTown(town);S.townRaw=town;const ptsPer=+$("p_pts").value,buffer=+$("p_buf").value||1500;
+  S.townName=prettyTown(town);S.townRaw=town;
+  {const m=millFor(town);if(m&&!S.millTouched){$("p_mill").value=m;$("p_mill").title=`FY${S.millFY} CT OPM mill rate for ${S.townName}`}}const ptsPer=+$("p_pts").value,buffer=+$("p_buf").value||1500;
   const whereTown=encodeURIComponent(`Town_Name='${town.replace(/'/g,"''")}'`);
   try{
     log("Counting parcels in "+S.townName+"…","act");
@@ -615,50 +676,6 @@ async function loadFema(bb){
 /* ---------- model ---------- */
 function P(){const v=id=>{const x=parseFloat($(id).value);return isFinite(x)?x:null};
   return{mill:v("p_mill")??28,ratio:v("p_ratio")??0.7,disc:v("p_disc")??0.07,ffh:v("p_ffh")??1,aep:v("p_aep")??0.01,cbfe:v("p_cbfe")??S.coastBFE,mhhw:v("p_mhhw")??S.mhhw,up:v("p_up")??1,adepth:v("p_adepth")??2,x02:v("p_x02")??1,npv:v("p_npv")??0.03,exempt:$("exempt").checked}}
-function ddf(d){if(d<DDF[0][0])return 0;for(let i=1;i<DDF.length;i++)if(d<=DDF[i][0]){const[a,fa]=DDF[i-1],[b,fb]=DDF[i];return(fa+(fb-fa)*(d-a)/(b-a))/100}return DDF[DDF.length-1][1]/100}
-/* Water levels for one parcel; depth is then read at the parcel's land points and at each building. */
-function parcelState(p,scen,year,pr){
-  if(p.elev===null||p.elev===undefined)return null;
-  const slrAbs=slrFt(scen,year),slr0=slrFt(scen,2020),dSLR=Math.max(0,slrAbs-slr0);
-  const uplift=pr.up*RIVER_MULT[scen]*Math.max(0,Math.min(1,(year-2020)/80));
-  const z=p.zone,coastalZone=z&&(z.kind==="V"||z.coastalAE);
-  const coastalOn=S.coastal&&(p.coastal||coastalZone);
-  const wl=pr.mhhw+slrAbs,wl0=pr.mhhw+slr0;
-  let cWL=null;if(coastalOn){const base=(coastalZone&&z.bfe)?z.bfe:pr.cbfe;if(base!=null)cWL=base+dSLR}
-  let rWL=null,rConst=null;
-  if(z&&!coastalZone){if(z.kind==="A"){if(z.bfe!=null)rWL=z.bfe+uplift;else rConst=(z.depth!=null&&/AO/.test(z.zone))?z.depth+uplift:pr.adepth+uplift}else if(z.kind==="X02")rConst=uplift-pr.x02}
-  const depthAt=e=>{const c=cWL!=null?cWL-e:-99,r=rWL!=null?rWL-e:(rConst!=null?rConst:-99);return c>=r?[c,"Coastal"]:[r,"Riverine"]};
-  const newlyTidal=e=>coastalOn&&e<wl&&!(e<wl0);
-  // land: share of the parcel's ground points newly below high tide
-  let landLost=0;if(coastalOn){const es=p.elevs||[p.elev];let nN=0,n0=0;for(let i=0;i<es.length;i++){if(es[i]<wl)nN++;if(es[i]<wl0)n0++}landLost=Math.max(0,(nN-n0)/es.length)}
-  // buildings: each building's own ground; value split by footprint area
-  let bLost=0,dmgFrac=0,depth=-99,src="Coastal",exposed=false;const bs=p.bldgs;
-  if(bs&&bs.length){for(const b of bs){const e=b.e!=null?b.e:p.elev;if(newlyTidal(e)){bLost+=b.w;continue}
-      const[d,sr]=depthAt(e);if(d>depth){depth=d;src=sr}if(d>0){exposed=true;dmgFrac+=b.w*ddf(d-pr.ffh)}}
-    if(bLost>=0.999){depth=0;}}
-  else{const[d,sr]=depthAt(p.elev);depth=d;src=sr;exposed=d>0;bLost=landLost;dmgFrac=d>0?ddf(d-pr.ffh)*(1-bLost):0}
-  const lost=landLost*p.aLand+bLost*p.aBldg;
-  return{landLost,bLost,depth,src,exposed,dmgFrac,lost,tideShare:p.assessed>0?lost/p.assessed:landLost,nb:bs?bs.length:0};
-}
-function parcelMoney(p,st,pr){
-  if(!st)return{tax:0,lost:0,disc:0,dmg:0,exposed:false};
-  const lost=st.lost,disc=st.exposed?pr.disc*Math.max(0,p.assessed-lost):0;
-  const dmg=st.exposed&&p.bldgAppr>0?st.dmgFrac*p.bldgAppr:0;
-  const tax=(lost+disc+pr.aep*dmg*pr.ratio)*pr.mill/1000;
-  return{tax,lost,disc,dmg,exposed:st.exposed};
-}
-function evalAll(scen,year,pr,detail){
-  let tot=0,base=0,n=0;const rows=detail?[]:null;
-  for(const p of S.parcels){if(pr.exempt&&p.exempt)continue;if(p.elev===null||p.elev===undefined)continue;
-    const s1=parcelState(p,scen,year,pr),s0=parcelState(p,scen,2020,pr);const m1=parcelMoney(p,s1,pr),m0=parcelMoney(p,s0,pr);
-    const d=m1.tax-m0.tax;tot+=d;base+=m0.tax;
-    const newly=(m1.exposed&&!m0.exposed)||s1.tideShare>0;if(newly)n++;
-    if(detail&&(d>0.5||m1.exposed||s1.tideShare>0))rows.push({p,s1,s0,m1,m0,d,newly});}
-  return{tot,base,n,rows};
-}
-function levy(pr){let a=0;for(const p of S.parcels){if(pr.exempt&&p.exempt)continue;a+=p.assessed}return a*pr.mill/1000}
-function trajectory(scen,pr){const ys=[];for(let y=2020;y<=2100;y+=10)ys.push(evalAll(scen,y,pr).tot);return ys}
-function npvFrom(traj,pr){let s=0;for(let y=2026;y<=2100;y++){const i=Math.min(8,Math.floor((y-2020)/10));const y0=2020+i*10;const v0=traj[i],v1=traj[Math.min(8,i+1)];s+=(v0+(v1-v0)*(y-y0)/10)/Math.pow(1+pr.npv,y-2026)}return s}
 function breakdown(r,pr){
   const f=pr.mill/1000;const parts={tidal:0,disc:0,reas:0};const uses={};const haz={Tidal:{n:0,v:0,t:0},Coastal:{n:0,v:0,t:0},Riverine:{n:0,v:0,t:0}};
   for(const x of r.rows){parts.tidal+=(x.m1.lost-x.m0.lost)*f;parts.disc+=(x.m1.disc-x.m0.disc)*f;parts.reas+=pr.aep*(x.m1.dmg-x.m0.dmg)*pr.ratio*f;
@@ -670,7 +687,7 @@ function breakdown(r,pr){
 /* ---------- render ---------- */
 function recompute(){
   $("yearval").textContent=S.year;
-  if(!S.parcels.length||!S.slr)return;
+  if(!S.parcels.length||!S.slr){drawRegion();return}
   const pr=P();
   $("slrval").textContent=`Sea level +${slrFt(S.scen,S.year).toFixed(2)} ft since 2005`;
   const r=evalAll(S.scen,S.year,pr,true);S.results=r;
@@ -684,6 +701,7 @@ function recompute(){
   $("chart").innerHTML=chartSVG(S.traj,S.scen,S.year,{grid:"var(--line)",text:"var(--muted)",other:"var(--muted)",sel:"var(--loss)",mark:"var(--accent)"});
   drawMix(breakdown(r,pr));drawTable(r);styleMap();
   if(typeof floodRender==="function"){floodRender();floodAcres()}
+  drawRegion();
 }
 function niceMax(v){const p=Math.pow(10,Math.floor(Math.log10(v)));for(const f of[1,1.2,2,4,6,8,10])if(f*p>=v)return f*p;return 10*p}
 function chartSVG(series,sel,year,c){
@@ -729,6 +747,29 @@ function drawTable(r){
   if(!rows.length){tb.innerHTML=`<tr><td colspan="10" class="empty">No parcels exposed in this scenario and year.</td></tr>`;return}
   tb.innerHTML=rows.map((x,i)=>`<tr data-i="${i}" tabindex="0"><td>${esc(x.p.a.Parcel_ID)}</td><td>${esc(x.p.a.Location)}</td><td>${esc(x.p.useDesc)}</td><td class="n">${money(x.p.assessed)}</td><td class="n">${x.p.gnd.toFixed(1)}</td><td>${hazardPill(x.s1)}</td><td class="n">${x.s1.depth>0?x.s1.depth.toFixed(1):"–"}</td><td class="n">${x.s1.tideShare>0?Math.round(x.s1.tideShare*100)+"%":"–"}</td><td class="n">${money(x.m1.dmg)}</td><td class="n"><b>${money(x.d)}</b></td></tr>`).join("");
   tb.querySelectorAll("tr").forEach(tr=>{const go=()=>{const p=rows[+tr.dataset.i].p;if(S.map){S.map.fitBounds([[p.bbox[1],p.bbox[0]],[p.bbox[3],p.bbox[2]]],{maxZoom:18,animate:false});openParcel(p)}$("map").scrollIntoView({behavior:"smooth",block:"center"})};tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter")go()}});
+}
+
+/* ---------- SECOG region comparison (data/region, built by the "Build regional comparison" Action) ---------- */
+async function loadRegion(){
+  try{const r=await fetch("data/region/southeastern-ct.json",{cache:"no-cache"});S.region=r.ok?await r.json():null}catch(e){S.region=null}
+  drawRegion();
+}
+const pctf=v=>v===0?"0%":v<0.01?"<0.01%":v<0.1?v.toFixed(3)+"%":v.toFixed(2)+"%";
+function drawRegion(){
+  const box=$("regionChart");if(!box)return;const R=S.region;
+  if(!R||!R.towns||!R.towns.length){box.innerHTML=`<div class="empty">The regional comparison hasn't been built yet. It appears here once the GitHub Action finishes.</div>`;return}
+  const yi=R.years.indexOf(S.year),sc=SCEN[S.scen],metric=S.regionMetric||"pct";
+  const rows=R.towns.map(t=>{const at=(t.scen[sc]||{assessedAtRisk:[]}).assessedAtRisk[yi]||0;const raw=(S.towns||[]).find(x=>x.name===t.town||x.raw===t.town);const mill=millFor(t.town)||28;
+    return{t,at,pct:t.grandList?at/t.grandList*100:0,usd:at*mill/1000,mill,known:!!millFor(t.town),raw:raw?raw.raw:t.town}});
+  rows.sort((a,b)=>b[metric]-a[metric]||a.t.town.localeCompare(b.t.town));
+  const mx=Math.max(1e-9,...rows.map(r=>r[metric]));const cur=$("town").value;
+  box.innerHTML=rows.map(r=>`<button type="button" class="rr${r.raw===cur?" cur":""}" data-raw="${esc(r.raw)}" aria-label="${esc(r.t.town)}: ${pctf(r.pct)} of tax base, ${money(r.usd)} a year. Analyze ${esc(r.t.town)}">
+    <span class="nm">${esc(r.t.town)}</span><span class="tr"><i style="width:${(r[metric]/mx*100).toFixed(1)}%"></i></span>
+    <span class="v">${metric==="pct"?`${pctf(r.pct)} <small>· ${money(r.usd)}</small>`:`${money(r.usd)} <small>· ${pctf(r.pct)}</small>`}</span></button>`).join("");
+  box.querySelectorAll(".rr").forEach(b=>b.onclick=()=>{pickTown(b.dataset.raw,true);$("mtitle").scrollIntoView({behavior:"smooth"})});
+  const tot=rows.reduce((s,r)=>s+r.usd,0),tl=rows.reduce((s,r)=>s+r.t.grandList,0),ta=rows.reduce((s,r)=>s+r.at,0);
+  $("regionSub").textContent=`${sc} scenario, ${S.year}: about ${money(tot)} a year of added tax revenue at risk across ${rows.length} SECOG towns (${pctf(ta/tl*100)} of the regional tax base). Select a town to analyze it.`;
+  $("regionNote").textContent=`Built ${R.built} with the default assumptions (the single-town view uses yours). Share of tax base = added assessed value at risk ÷ taxable grand list. Dollars use each town's FY${S.millFY||""} municipal mill rate from CT OPM${rows.some(r=>!r.known)?"; 28 mills where no rate was found":""}; special-district taxes are not included. In today's dollars.`;
 }
 
 /* ---------- map ---------- */
@@ -921,13 +962,14 @@ $("year").oninput=e=>{if(e.isTrusted)stopPlay();S.year=+e.target.value;recompute
 $("run").onclick=analyze;$("csv").onclick=exportCSV;$("exempt").onchange=recompute;$("rep").onclick=buildReport;
 $("btnPrint").onclick=()=>window.print();$("btnCloseReport").onclick=()=>$("report").classList.remove("open");
 document.addEventListener("keydown",e=>{if(e.key==="Escape")$("report").classList.remove("open")});
+$("p_mill").addEventListener("input",()=>{S.millTouched=true});
 let deb;document.querySelectorAll(".params input").forEach(i=>i.addEventListener("input",()=>{clearTimeout(deb);deb=setTimeout(recompute,250)}));
 /* ---------- info popups for inputs ---------- */
 const INFO={
   h_scen:["NOAA 2022 sea level rise scenarios","Five plausible futures from the 2022 Interagency Sea Level Rise Technical Report, from Low to High, projected for the nearest Long Island Sound tide gauge. Intermediate is a common planning choice; Connecticut's planning standard of 20 inches (0.5 m) by 2050 sits near the Intermediate-High to High scenarios.","Higher scenario → more land below high tide and deeper coastal floods."],
   l_year:["Planning year","The year whose sea level and flood conditions are modeled. All dollar results compare that year with today (2020 conditions). Press Play to step through every decade.","Later year → higher water, more parcels exposed."],
   exempt:["Tax-exempt parcels","Parcels with a state use code in the 900s (government, religious, educational and other exempt uses) or $0 assessed value pay no property tax, so they add no revenue at risk. Untick to see their value exposure anyway.",""],
-  p_mill:["Mill rate","Tax per $1,000 of assessed value. Every dollar figure scales directly with it: tax at risk = assessed value at risk × mill rate ÷ 1,000. Use the town's current rate from its tax collector or the CT Office of Policy and Management. Where a town has fire or city districts with different rates, use a weighted or the most common rate.","Doubling the mill rate doubles tax at risk."],
+  p_mill:["Mill rate","Tax per $1,000 of assessed value. Every dollar figure scales directly with it: tax at risk = assessed value at risk × mill rate ÷ 1,000. Filled in automatically with the town's latest municipal rate from CT OPM (data.ct.gov). Fire, city and other special-district taxes are not included. Type a value to override it for every town.","Doubling the mill rate doubles tax at risk."],
   p_ratio:["Assessment ratio","Connecticut assesses property at 70% of fair market value (CGS § 12-62a). The model uses it to turn flood damage, measured in appraised dollars, into the drop in assessed value after a flood.","Change only if testing a different assessment practice."],
   p_disc:["Market discount on newly exposed parcels","The share of value buyers knock off a property once it falls inside the flood, applied once when a parcel becomes newly exposed. Studies of coastal homes generally find discounts from a few percent up to about 10%; 7% is a mid-range default.","Higher discount → more assessed value lost at revaluation."],
   p_ffh:["First-floor height","How far the lowest occupied floor sits above the ground at the building. Depth inside the building = flood depth at the building's ground minus this height. Older slab and crawlspace homes are often about 1 ft; homes elevated to FEMA standards in VE and AE zones can be 8 ft or more.","Higher floor → less building damage."],
@@ -961,7 +1003,9 @@ function setupInfo(){
 }
 function closeInfo(){document.querySelectorAll(".pop").forEach(p=>p.hidden=true);document.querySelectorAll(".info").forEach(b=>b.setAttribute("aria-expanded","false"))}
 
-setupSort();setupInfo();
+setupSort();setupInfo();setupTownSearch();loadMillRates();loadRegion();
+S.regionMetric="pct";
+$("regionMetric").onclick=e=>{const b=e.target.closest("button");if(!b)return;S.regionMetric=b.dataset.m;[...$("regionMetric").children].forEach(x=>x.setAttribute("aria-pressed",x===b));drawRegion()};
 $("play").onclick=()=>togglePlay();
 S.view="water";
 $("mapview").onclick=e=>{const b=e.target.closest("button");if(!b)return;S.view=b.dataset.v;
@@ -971,7 +1015,7 @@ $("mapview").onclick=e=>{const b=e.target.closest("button");if(!b)return;S.view=
   $("mapexplain").textContent=S.view==="tax"?"Parcels are shaded by the added annual tax at risk for the selected scenario and year. Flood extent is shown faintly underneath.":"Blue shading is modeled flood extent and depth on 1 m lidar ground for the selected scenario and year. Parcels are outlined by the added annual tax at risk, judged at each parcel's buildings.";
   if(typeof floodRender==="function")floodRender();if(S.layer)S.layer.redraw()};
 loadTowns();
-$("splashProceedBtn").onclick=()=>{$("splashScreen").hidden=true;$("town").focus()};
+$("splashProceedBtn").onclick=()=>{$("splashScreen").hidden=true;$("townSearch").focus()};
 $("splashProceedBtn").focus();
 </script>
 <script src="flood.js"></script>

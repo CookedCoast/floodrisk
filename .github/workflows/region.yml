@@ -1,0 +1,43 @@
+name: Build regional comparison
+
+# Runs the app's model for every town in a planning region (default: SECOG) with default
+# assumptions, for all scenarios and decades, and commits data/region/<region>.json.
+on:
+  workflow_dispatch:
+    inputs:
+      region:
+        description: "Planning region as in the parcel layer's COG field"
+        required: false
+        default: "Southeastern CT"
+  schedule:
+    - cron: "23 8 2 * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: region
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build comparison
+        env:
+          REGION: ${{ github.event.inputs.region || 'Southeastern CT' }}
+        run: node scripts/build-region.mjs
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/region
+          git diff --cached --quiet || git commit -q -m "Regional comparison: ${REGION:-Southeastern CT}"
+          git pull -q --rebase && git push -q
+        env:
+          REGION: ${{ github.event.inputs.region }}

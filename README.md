@@ -22,6 +22,10 @@ The map shades modeled flood extent and depth for the selected scenario and year
 
 The USGS 3DEP image service computes each map view on demand, which takes 15–60 seconds and often times out. The **Build flood elevation tiles** GitHub Action (`.github/workflows/dem.yml`, script `scripts/build-dem.mjs`) downloads the 1 m elevation once, only where flooding is possible (FEMA flood zones plus the coastal reach around VE zones), and saves it as 256 px tiles in `data/dem/<z>/<x>/<y>.png` for zooms 12–15. Each pixel stores elevation in 5 cm steps (`R*256 + G = (metres + 100) * 20`; transparent = no data). The app reads these tiles for towns listed in `data/dem/towns.json` and falls back to the live service for others. SECOG towns are built first.
 
+## SECOG region comparison
+
+The **Build regional comparison** GitHub Action (`.github/workflows/region.yml`, script `scripts/build-region.mjs`) runs the same model (`model.js`, `geo.js`) for every SECOG town with the default assumptions, for all five scenarios and every decade, and writes `data/region/southeastern-ct.json`. The app ranks towns by share of tax base at risk or by dollars a year, using each town's latest municipal mill rate from CT OPM on data.ct.gov. It refreshes monthly.
+
 ## Saved elevations
 
 Sampling lidar elevation for thousands of parcels and buildings is the slowest part of an analysis, so each town's parcel elevations are saved in `data/elev/<town>.json`, and each building's point, footprint area and ground elevation in `data/bldg/<town>.json`. The app requests only points that are missing. The files are built by the **Build saved elevations** GitHub Action (`.github/workflows/elevations.yml`, script `scripts/build-elevations.mjs`):
