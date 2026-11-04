@@ -592,6 +592,11 @@
    "town": "Ridgefield",
    "built": "2026-11-04",
    "tiles": 246
+  },
+  "rocky-hill": {
+   "town": "Rocky Hill",
+   "built": "2026-11-04",
+   "tiles": 548
   }
  }
 }
