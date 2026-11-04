@@ -392,6 +392,11 @@
    "town": "Killingly",
    "built": "2026-11-04",
    "tiles": 230
+  },
+  "killingworth": {
+   "town": "Killingworth",
+   "built": "2026-11-04",
+   "tiles": 188
   }
  }
 }
