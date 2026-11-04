@@ -752,6 +752,11 @@
    "town": "West Hartford",
    "built": "2026-11-04",
    "tiles": 155
+  },
+  "west-haven": {
+   "town": "West Haven",
+   "built": "2026-11-04",
+   "tiles": 127
   }
  }
 }
