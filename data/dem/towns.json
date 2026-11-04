@@ -562,6 +562,11 @@
    "town": "Plymouth",
    "built": "2026-11-04",
    "tiles": 47
+  },
+  "pomfret": {
+   "town": "Pomfret",
+   "built": "2026-11-04",
+   "tiles": 216
   }
  }
 }
