@@ -300,6 +300,66 @@
    "built": "2026-11-04",
    "parcels": 3450,
    "points": 3450
+  },
+  "fairfield": {
+   "town": "Fairfield",
+   "built": "2026-11-04",
+   "parcels": 21756,
+   "points": 21743
+  },
+  "farmington": {
+   "town": "Farmington",
+   "built": "2026-11-04",
+   "parcels": 11231,
+   "points": 9775
+  },
+  "franklin": {
+   "town": "Franklin",
+   "built": "2026-11-04",
+   "parcels": 1112,
+   "points": 1112
+  },
+  "glastonbury": {
+   "town": "Glastonbury",
+   "built": "2026-11-04",
+   "parcels": 15356,
+   "points": 14946
+  },
+  "goshen": {
+   "town": "Goshen",
+   "built": "2026-11-04",
+   "parcels": 2314,
+   "points": 2312
+  },
+  "granby": {
+   "town": "Granby",
+   "built": "2026-11-04",
+   "parcels": 5191,
+   "points": 5189
+  },
+  "greenwhich": {
+   "town": "Greenwhich",
+   "built": "2026-11-04",
+   "parcels": 19363,
+   "points": 19363
+  },
+  "griswold": {
+   "town": "Griswold",
+   "built": "2026-11-04",
+   "parcels": 5194,
+   "points": 5193
+  },
+  "groton": {
+   "town": "Groton",
+   "built": "2026-11-04",
+   "parcels": 13113,
+   "points": 13065
+  },
+  "guilford": {
+   "town": "Guilford",
+   "built": "2026-11-04",
+   "parcels": 10957,
+   "points": 10657
   }
  }
 }
