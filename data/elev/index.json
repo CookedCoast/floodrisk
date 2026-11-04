@@ -60,6 +60,66 @@
    "built": "2026-11-04",
    "parcels": 1823,
    "points": 1823
+  },
+  "bloomfield": {
+   "town": "Bloomfield",
+   "built": "2026-11-04",
+   "parcels": 8486,
+   "points": 8467
+  },
+  "bolton": {
+   "town": "Bolton",
+   "built": "2026-11-04",
+   "parcels": 2358,
+   "points": 2358
+  },
+  "bozrah": {
+   "town": "Bozrah",
+   "built": "2026-11-04",
+   "parcels": 1391,
+   "points": 1391
+  },
+  "branford": {
+   "town": "Branford",
+   "built": "2026-11-04",
+   "parcels": 13575,
+   "points": 12786
+  },
+  "bridgeport": {
+   "town": "Bridgeport",
+   "built": "2026-11-04",
+   "parcels": 34365,
+   "points": 29032
+  },
+  "bridgewater": {
+   "town": "Bridgewater",
+   "built": "2026-11-04",
+   "parcels": 1167,
+   "points": 1167
+  },
+  "bristol": {
+   "town": "Bristol",
+   "built": "2026-11-04",
+   "parcels": 22072,
+   "points": 21780
+  },
+  "brookfield": {
+   "town": "Brookfield",
+   "built": "2026-11-04",
+   "parcels": 7630,
+   "points": 7515
+  },
+  "brooklyn": {
+   "town": "Brooklyn",
+   "built": "2026-11-04",
+   "parcels": 3736,
+   "points": 3736
+  },
+  "burlington": {
+   "town": "Burlington",
+   "built": "2026-11-04",
+   "parcels": 4045,
+   "points": 4045
   }
  }
 }
