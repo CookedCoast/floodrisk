@@ -337,6 +337,11 @@
    "town": "Granby",
    "built": "2026-11-04",
    "tiles": 439
+  },
+  "greenwhich": {
+   "town": "Greenwhich",
+   "built": "2026-11-04",
+   "tiles": 365
   }
  }
 }
