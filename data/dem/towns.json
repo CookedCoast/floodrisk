@@ -372,6 +372,11 @@
    "town": "Hartland",
    "built": "2026-11-04",
    "tiles": 37
+  },
+  "harwinton": {
+   "town": "Harwinton",
+   "built": "2026-11-04",
+   "tiles": 8
   }
  }
 }
