@@ -900,6 +900,66 @@
    "built": "2026-11-04",
    "parcels": 2632,
    "points": 2632
+  },
+  "waterbury": {
+   "town": "Waterbury",
+   "built": "2026-11-04",
+   "parcels": 28979,
+   "points": 28979
+  },
+  "waterford": {
+   "town": "Waterford",
+   "built": "2026-11-04",
+   "parcels": 9631,
+   "points": 9526
+  },
+  "watertown": {
+   "town": "Watertown",
+   "built": "2026-11-04",
+   "parcels": 9742,
+   "points": 9740
+  },
+  "west-hartford": {
+   "town": "West Hartford",
+   "built": "2026-11-04",
+   "parcels": 21656,
+   "points": 21656
+  },
+  "west-haven": {
+   "town": "West Haven",
+   "built": "2026-11-04",
+   "parcels": 16945,
+   "points": 15658
+  },
+  "westbrook": {
+   "town": "Westbrook",
+   "built": "2026-11-04",
+   "parcels": 4570,
+   "points": 4570
+  },
+  "weston": {
+   "town": "Weston",
+   "built": "2026-11-04",
+   "parcels": 4211,
+   "points": 4211
+  },
+  "westport": {
+   "town": "Westport",
+   "built": "2026-11-04",
+   "parcels": 10543,
+   "points": 10475
+  },
+  "wethersfield": {
+   "town": "Wethersfield",
+   "built": "2026-11-04",
+   "parcels": 10725,
+   "points": 10725
+  },
+  "willington": {
+   "town": "Willington",
+   "built": "2026-11-04",
+   "parcels": 2525,
+   "points": 2449
   }
  }
 }
