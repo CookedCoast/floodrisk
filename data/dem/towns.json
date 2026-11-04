@@ -812,6 +812,11 @@
    "town": "Woodbridge",
    "built": "2026-11-04",
    "tiles": 82
+  },
+  "woodbury": {
+   "town": "Woodbury",
+   "built": "2026-11-04",
+   "tiles": 80
   }
  }
 }
