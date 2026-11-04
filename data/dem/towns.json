@@ -802,6 +802,11 @@
    "town": "Windsor Locks",
    "built": "2026-11-04",
    "tiles": 353
+  },
+  "wolcott": {
+   "town": "Wolcott",
+   "built": "2026-11-04",
+   "tiles": 84
   }
  }
 }
