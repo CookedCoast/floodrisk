@@ -76,13 +76,14 @@ async function zonesIn(bb) {
   const where = encodeURIComponent("SFHA_TF='T' OR ZONE_SUBTY LIKE '%0.2 PCT%'");
   const out = new Map();
   async function q(t, depth) {
-    const url = `${FEMA}?where=${where}&geometry=${t.map((v) => v.toFixed(5)).join(",")}&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID,FLD_ZONE&returnGeometry=true&outSR=4326&geometryPrecision=5&maxAllowableOffset=0.00005&f=geojson`;
+    const url = `${FEMA}?where=${where}&geometry=${t.map((v) => v.toFixed(5)).join(",")}&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID,FLD_ZONE,STATIC_BFE&returnGeometry=true&outSR=4326&geometryPrecision=5&maxAllowableOffset=0.00005&f=geojson`;
     const j = await get(url);
     if ((j.exceededTransferLimit || (j.properties && j.properties.exceededTransferLimit)) && depth < 4) {
       const mx = (t[0] + t[2]) / 2, my = (t[1] + t[3]) / 2;
       for (const s of [[t[0], t[1], mx, my], [mx, t[1], t[2], my], [t[0], my, mx, t[3]], [mx, my, t[2], t[3]]]) await q(s, depth + 1);
     }
-    for (const f of j.features || []) { const id = (f.properties || {}).OBJECTID ?? f.id; if (f.geometry && !out.has(id)) out.set(id, { v: /^V/.test(String(f.properties.FLD_ZONE || "")), g: f.geometry }); }
+    for (const f of j.features || []) { const id = (f.properties || {}).OBJECTID ?? f.id; if (f.geometry && !out.has(id)) { const p = f.properties || {}; const bfe = p.STATIC_BFE > -9000 ? +p.STATIC_BFE : null;
+      out.set(id, { v: /^V/.test(String(p.FLD_ZONE || "")) || (bfe != null && bfe <= 15), g: f.geometry }); } }
   }
   const tiles = [];
   for (let x = bb[0]; x < bb[2]; x += 0.04) for (let y = bb[1]; y < bb[3]; y += 0.04) tiles.push([x, y, Math.min(x + 0.04, bb[2]), Math.min(y + 0.04, bb[3])]);

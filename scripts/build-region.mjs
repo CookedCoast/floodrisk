@@ -111,7 +111,9 @@ async function analyzeTown(town) {
     Object.assign(p, compact(g, O)); parcels.push(p);
   }
   let bb = [180, 90, -180, -90]; for (const p of parcels) bb = [Math.min(bb[0], p.bbox[0]), Math.min(bb[1], p.bbox[1]), Math.max(bb[2], p.bbox[2]), Math.max(bb[3], p.bbox[3])];
-  const zones = await loadFema(bb); const coastal = zones.some((z) => z.kind === "V");
+  const zones = await loadFema(bb);
+  for (const z of zones) if (z.kind === "A" && z.bfe != null && (z.bfe <= 15 || (z.nearV && z.bfe <= 18))) z.coastalAE = true;  // tidal AE, as in the app
+  const coastal = zones.some((z) => z.kind === "V" || z.coastalAE);
   // zone assignment
   const C = 0.01, key = (i, j) => i + ":" + j, grid = new Map(), rank = { V: 4, A: 3, X02: 1 };
   zones.forEach((z, zi) => { for (let i = Math.floor(z.bbox[0] / C); i <= Math.floor(z.bbox[2] / C); i++) for (let j = Math.floor(z.bbox[1] / C); j <= Math.floor(z.bbox[3] / C); j++) { const k = key(i, j); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(zi); } });
@@ -121,15 +123,14 @@ async function analyzeTown(town) {
     p.zone = best; }
   let coastBFE = null;
   if (coastal) {
-    const vg = new Map(); for (const z of zones) { if (z.kind !== "V") continue; for (const poly of polysOf(z.g)) for (const r of poly) for (let k = 0; k < r.length; k += 2) { const v = r[k]; const kk = key(Math.floor(v[0] / C), Math.floor(v[1] / C)); if (!vg.has(kk)) vg.set(kk, []); vg.get(kk).push(v); } }
+    const vg = new Map(); for (const z of zones) { if (z.kind !== "V" && !z.coastalAE) continue; for (const poly of polysOf(z.g)) for (const r of poly) for (let k = 0; k < r.length; k += 2) { const v = r[k]; const kk = key(Math.floor(v[0] / C), Math.floor(v[1] / C)); if (!vg.has(kk)) vg.set(kk, []); vg.get(kk).push(v); } }
     const Rr = Math.ceil(BUFFER / 800);
     for (const p of parcels) { const ci = Math.floor(p.pt[0] / C), cj = Math.floor(p.pt[1] / C); let hit = false;
       for (let i = ci - Rr; i <= ci + Rr && !hit; i++) for (let j = cj - Rr; j <= cj + Rr && !hit; j++) { const vs = vg.get(key(i, j)); if (!vs) continue; for (const v of vs) if (metersBetween(p.pt, v) <= BUFFER) { hit = true; break; } }
       p.coastal = hit; }
-    const cAE = zones.filter((z) => z.kind === "A" && z.bfe && z.bfe >= 7 && z.bfe <= 18 && z.nearV).map((z) => z.bfe).sort((a, b) => a - b);
+    const cAE = zones.filter((z) => z.coastalAE && z.bfe >= 5).map((z) => z.bfe).sort((a, b) => a - b);
     const vBFE = zones.filter((z) => z.kind === "V" && z.bfe).map((z) => z.bfe).sort((a, b) => a - b);
     coastBFE = cAE.length ? cAE[Math.floor(cAE.length / 2)] : (vBFE.length ? vBFE[Math.floor(vBFE.length / 2)] - 2 : 11);
-    for (const p of parcels) if (p.zone && p.zone.kind === "A" && p.coastal && p.zone.bfe && p.zone.bfe >= 7 && p.zone.bfe <= 18 && p.zone.nearV) { const z = p.zone; p.zone = { zone: z.zone, kind: z.kind, bfe: z.bfe, depth: z.depth, nearV: z.nearV, coastalAE: true }; }
   }
   const cx = (bb[0] + bb[2]) / 2, st = Math.abs(cx - M.SLR_FALLBACK["8467150"].lon) < Math.abs(cx - M.SLR_FALLBACK["8461490"].lon) ? "8467150" : "8461490";
   const slr = await loadSLR(st); const a = M.SLR_FALLBACK["8467150"], b = M.SLR_FALLBACK["8461490"];
