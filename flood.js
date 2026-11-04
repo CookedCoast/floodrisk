@@ -10,7 +10,7 @@
 const DEM_SVC = "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage";
 const FT_M = 3.28084, ACRE_M2 = 4046.856;
 const FLOOD_RGBA = { chronic: [12, 68, 124, 215], hatch: [111, 159, 211, 215], d3: [24, 95, 165, 200], d1: [55, 138, 221, 175], d0: [158, 195, 230, 165] };
-const F = { view: null, town: null, overlay: null, req: 0, timer: null, playing: null, acresKey: null, acres: null };
+const F = { view: null, town: null, overlay: null, req: 0, timer: null, playing: null, acresKey: null, acres: null, fails: 0 };
 
 /* ---------- elevation grid ---------- */
 function demRule(loM, stepM) {
@@ -43,7 +43,11 @@ async function fetchDEM(ext, w, h, pr) {
     renderingRule: JSON.stringify(demRule(loM, stepM)), f: "json" });
   const meta = await getJSON(DEM_SVC, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() }, 3);
   if (!meta.href) throw new Error("no image");
-  const blob = await (await fetch(meta.href)).blob();
+  let blob = null;
+  for (let i = 0; i < 4 && !blob; i++) {
+    try { const r = await fetch(meta.href); if (!r.ok) throw new Error("HTTP " + r.status); blob = await r.blob(); }
+    catch (e) { if (i === 3) throw e; await new Promise((res) => setTimeout(res, 1500 * (i + 1))); }
+  }
   const bm = await createImageBitmap(blob);
   const c = document.createElement("canvas"); c.width = bm.width; c.height = bm.height;
   const ctx = c.getContext("2d"); ctx.drawImage(bm, 0, 0);
@@ -124,7 +128,7 @@ const toLatLng = (x, y) => [(2 * Math.atan(Math.exp(y / 6378137)) - Math.PI / 2)
 function floodReset() {
   if (F.overlay && S.map) { S.ctrl && S.ctrl.removeLayer(F.overlay); F.overlay.remove(); }
   F.overlay = null; F.view = null; F.town = null; F.acres = null; F.acresKey = null; stopPlay();
-  if (S.map && !F.wired) { S.map.on("moveend", () => { clearTimeout(F.timer); F.timer = setTimeout(floodFetchView, 350); }); F.wired = true; }
+  if (S.map && !F.wired) { S.map.on("moveend", () => { clearTimeout(F.timer); F.fails = 0; F.timer = setTimeout(floodFetchView, 350); }); F.wired = true; }
 }
 async function floodFetchView() {
   if (!S.map || !S.parcels.length || !S.slr) return;
@@ -138,8 +142,13 @@ async function floodFetchView() {
   try {
     const g = await fetchDEM([sw.x, sw.y, ne.x, ne.y], w, h, P());
     if (id !== F.req) return;
-    F.view = g; floodRender(); floodNote("");
-  } catch (e) { if (id === F.req) floodNote("Flood depth shading is unavailable right now; parcel results are unaffected."); }
+    F.view = g; F.fails = 0; floodRender(); floodNote("");
+  } catch (e) {
+    if (id !== F.req) return;
+    F.fails++;
+    if (F.fails <= 3) { floodNote("The elevation service is slow; retrying flood depth…"); clearTimeout(F.timer); F.timer = setTimeout(floodFetchView, 8000 * F.fails); }
+    else floodNote("Flood depth shading is unavailable right now; parcel results are unaffected. Pan or zoom to try again.");
+  }
 }
 function floodRender() {
   const g = F.view; if (!g || !S.map) return;
