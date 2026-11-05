@@ -172,15 +172,26 @@ async function pyramid(tiles15) {
     level = parents;
   }
 }
-function commit(msg) {
+/* Commit and push, merging data/dem/towns.json with whatever other runs pushed meanwhile. */
+function commit(msg, index, idxPath) {
   if (!GIT) return;
-  try {
-    execSync("git add data/dem", { cwd: ROOT, stdio: "inherit" });
-    execSync(`git diff --cached --quiet || git commit -q -m "${msg}"`, { cwd: ROOT, stdio: "inherit", shell: "/bin/bash" });
-    execSync("git pull -q --rebase && git push -q", { cwd: ROOT, stdio: "inherit", shell: "/bin/bash" });
-  } catch (e) { log("commit/push failed:", e.message); }
+  const sh = (c) => execSync(c, { cwd: ROOT, stdio: "pipe", shell: "/bin/bash" }).toString();
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try {
+      try { sh("git rebase --abort"); } catch (e) {}
+      sh("git fetch -q origin main");
+      let remote = {};
+      try { remote = JSON.parse(sh("git show origin/main:data/dem/towns.json")).towns || {}; } catch (e) {}
+      index.towns = { ...remote, ...index.towns };
+      execSync(`cat > ${JSON.stringify(idxPath)}`, { input: JSON.stringify(index, null, 1), cwd: ROOT, shell: "/bin/bash" });
+      sh("git add data/dem");
+      try { sh(`git diff --cached --quiet || git commit -q -m ${JSON.stringify(msg)}`); } catch (e) {}
+      sh("git pull -q --rebase -X theirs origin main");
+      sh("git push -q origin HEAD:main");
+      return;
+    } catch (e) { log(`commit/push attempt ${attempt} failed: ${String(e.stderr || e.message).split("\n")[0]}`); execSync("sleep " + 5 * attempt); }
+  }
 }
-
 async function main() {
   await mkdir(OUT, { recursive: true });
   const idxPath = path.join(OUT, "towns.json");
@@ -212,7 +223,7 @@ async function main() {
         done++;
       }
       log(`${town}: ${zones.length} zones, ${marked.size} tiles (${saved} new, ${blocks.size} blocks, ${failed} failed${failed ? "; will finish on the next run" : ""}) in ${((Date.now() - t) / 1000).toFixed(0)} s`);
-      commit(`Flood elevation tiles: ${town}`);
+      commit(`Flood elevation tiles: ${town}`, index, idxPath);
     } catch (e) { log(`${town}: FAILED (${e.message}); will retry on the next run`); }
   }
   log(`done: ${done} towns in ${((Date.now() - T0) / 60000).toFixed(1)} min`);
