@@ -832,6 +832,11 @@
    "town": "North Stonington",
    "built": "2026-11-05",
    "tiles": 337
+  },
+  "stonington": {
+   "town": "Stonington",
+   "built": "2026-11-05",
+   "tiles": 425
   }
  }
 }
