@@ -134,22 +134,34 @@ function decode(buf) {
 async function writeTile(z, x, y, buf) { const p = tilePath(z, x, y); await mkdir(path.dirname(p), { recursive: true }); await writeFile(p, buf); }
 
 /* Download one 8 x 8 block of z15 tiles and save the marked ones. */
-async function block(bx, by, want) {
-  const x0 = bx * BLOCK, y0 = by * BLOCK, px = BLOCK * 256;
-  const xmin = -O + x0 * TS, ymax = O - y0 * TS, xmax = xmin + BLOCK * TS, ymin = ymax - BLOCK * TS;
+/* Download an n x n group of z15 tiles (n = 8, 4, 2, 1) and save the wanted ones.
+   USGS often times out (HTTP 502/504) on large requests, so a failed group is split into quadrants and retried. */
+async function tileGroup(x0, y0, n, want) {
+  const px = n * 256, xmin = -O + x0 * TS, ymax = O - y0 * TS, xmax = xmin + n * TS, ymin = ymax - n * TS;
   const url = `${ELEV}?bbox=${[xmin, ymin, xmax, ymax].map((v) => v.toFixed(3)).join(",")}&bboxSR=3857&imageSR=3857&size=${px},${px}&format=tiff&pixelType=F32&noData=-9999&interpolation=RSP_BilinearInterpolation&f=image`;
-  const buf = await get(url, {}, 5, "buf");
-  const img = await (await fromArrayBuffer(buf)).getImage();
-  const [ras] = await img.readRasters();
-  const w = img.getWidth();
-  let n = 0;
+  let ras, w;
+  try {
+    const buf = await get(url, {}, n > 1 ? 2 : 5, "buf");
+    const img = await (await fromArrayBuffer(buf)).getImage();
+    [ras] = await img.readRasters(); w = img.getWidth();
+  } catch (e) {
+    if (n === 1) throw e;
+    const h = n / 2; let saved = 0;
+    for (const [qx, qy] of [[0, 0], [h, 0], [0, h], [h, h]]) {
+      const sub = want.filter(([tx, ty]) => tx >= x0 + qx && tx < x0 + qx + h && ty >= y0 + qy && ty < y0 + qy + h);
+      if (sub.length) saved += await tileGroup(x0 + qx, y0 + qy, h, sub);
+    }
+    return saved;
+  }
+  let saved = 0;
   for (const [tx, ty] of want) {
     const ox = (tx - x0) * 256, oy = (ty - y0) * 256, vals = new Float32Array(65536);
     for (let r = 0; r < 256; r++) for (let c = 0; c < 256; c++) vals[r * 256 + c] = ras[(oy + r) * w + ox + c];
-    await writeTile(Z, tx, ty, encode(vals, 256, 256)); n++;
+    await writeTile(Z, tx, ty, encode(vals, 256, 256)); saved++;
   }
-  return n;
+  return saved;
 }
+const block = (bx, by, want) => tileGroup(bx * BLOCK, by * BLOCK, BLOCK, want);
 /* Average 2 x 2 children into each parent tile, for zooms 14 down to 12. */
 async function pyramid(tiles15) {
   let level = new Set([...tiles15]);
