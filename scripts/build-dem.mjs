@@ -69,7 +69,7 @@ async function townList() {
 }
 async function townExtent(town) {
   const w = encodeURIComponent(`Town_Name='${town.replace(/'/g, "''")}'`);
-  const j = await get(`${PARCELS}?where=${w}&returnExtentOnly=true&outSR=4326&f=json`);
+  const j = await get(`${PARCELS}?where=${w}&returnExtentOnly=true&outSR=4326&f=json`).catch((e) => { throw new Error(`parcel extent (${e.message})`); });
   const e = j.extent; return [e.xmin, e.ymin, e.xmax, e.ymax];
 }
 async function zonesIn(bb) {
@@ -77,7 +77,15 @@ async function zonesIn(bb) {
   const out = new Map();
   async function q(t, depth) {
     const url = `${FEMA}?where=${where}&geometry=${t.map((v) => v.toFixed(5)).join(",")}&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID,FLD_ZONE,STATIC_BFE&returnGeometry=true&outSR=4326&geometryPrecision=5&maxAllowableOffset=0.00005&f=geojson`;
-    const j = await get(url);
+    let j;
+    try { j = await get(url, {}, depth < 3 ? 3 : 6); }
+    catch (e) {
+      /* FEMA drops large responses on detailed shorelines: split the query area into quadrants and retry. */
+      if (depth >= 3) throw new Error(`FEMA zones (${e.message})`);
+      const mx = (t[0] + t[2]) / 2, my = (t[1] + t[3]) / 2;
+      for (const s of [[t[0], t[1], mx, my], [mx, t[1], t[2], my], [t[0], my, mx, t[3]], [mx, my, t[2], t[3]]]) await q(s, depth + 1);
+      return;
+    }
     if ((j.exceededTransferLimit || (j.properties && j.properties.exceededTransferLimit)) && depth < 4) {
       const mx = (t[0] + t[2]) / 2, my = (t[1] + t[3]) / 2;
       for (const s of [[t[0], t[1], mx, my], [mx, t[1], t[2], my], [t[0], my, mx, t[3]], [mx, my, t[2], t[3]]]) await q(s, depth + 1);
