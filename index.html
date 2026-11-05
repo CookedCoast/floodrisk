@@ -116,6 +116,15 @@ main{padding-block:20px 40px;padding-left:24px;padding-right:max(24px,env(safe-a
 .chartwrap{min-width:0}
 .chartwrap svg{display:block;max-width:100%;height:auto}
 #chart text{font:12px var(--font);fill:var(--muted)}
+.hzgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:14px 26px}
+.hzgrid h4{margin:6px 0 6px;font-size:.9rem;color:var(--head)}
+.hzgrid h4 small{font-weight:500;color:var(--muted)}
+.hzt{font-size:.84rem;margin-bottom:6px}
+.hzt td,.hzt th{white-space:normal}
+#hzCard tbody tr{cursor:default}
+.hzt .sw{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.hzbig{font-size:.92rem;margin:4px 0 8px}
+.pill.surge1{background:#fae7df;color:#993c1d}.pill.surge2{background:#f5c4b3;color:#712b13}.pill.surge3{background:#d85a30;color:#fff}.pill.surge4{background:#4a1b0c;color:#fff}
 .region{display:grid;gap:4px}
 .region .rr{all:unset;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,140px) minmax(0,1fr) 150px;gap:10px;align-items:center;padding:4px 6px;border-radius:5px;cursor:pointer;font-size:.88rem}
 .region .rr:hover,.region .rr:focus-visible{background:var(--wash)}
@@ -353,6 +362,11 @@ th.sort[aria-sort] .ar{opacity:1}
     <p class="note" id="regionNote" style="margin:10px 0 0"></p>
   </section>
 
+  <section class="card" id="hzCard">
+    <header><h3>Coastal hazards</h3><p>Hurricane surge, evacuation zones, coastal boundary, erosion and Storm Sandy, from the CT ECO Coastal Hazards Viewer datasets. Turn the matching map layers on from the map's layer button.</p></header>
+    <div id="hzBody"><div class="empty">Analyze a town to see its hurricane surge, evacuation, coastal boundary, erosion and Storm Sandy information.</div></div>
+  </section>
+
   <section class="split">
     <div class="card">
       <header><h3>Flood and tax map</h3>
@@ -385,8 +399,8 @@ th.sort[aria-sort] .ar{opacity:1}
   <section class="card">
     <header><h3>Parcel ledger</h3><button id="csv" disabled>Export exposed parcels (CSV)</button><p>Exposed parcels in the selected scenario and year. Select a column heading to sort, or a row to find the parcel on the map. Dollar values are in today's dollars.</p></header>
     <div class="tblwrap"><table id="tbl"><thead><tr>
-      <th class="sort" data-k="id">Parcel ID</th><th class="sort" data-k="loc">Location</th><th class="sort" data-k="use">Use</th><th class="sort n" data-k="assessed">Assessed</th><th class="sort n" data-k="elev" title="Ground at the lowest building, or at the parcel if it has no building">Ground (ft)</th><th class="sort" data-k="haz">Hazard</th><th class="sort n" data-k="depth">Depth (ft)</th><th class="sort n" data-k="tide">Lost to tide</th><th class="sort n" data-k="dmg">1% flood damage</th><th class="sort n" data-k="d">Added tax / yr</th>
-    </tr></thead><tbody><tr><td colspan="10" class="empty">No town analyzed yet.</td></tr></tbody></table></div>
+      <th class="sort" data-k="id">Parcel ID</th><th class="sort" data-k="loc">Location</th><th class="sort" data-k="use">Use</th><th class="sort n" data-k="assessed">Assessed</th><th class="sort n" data-k="elev" title="Ground at the lowest building, or at the parcel if it has no building">Ground (ft)</th><th class="sort" data-k="haz">Hazard</th><th class="sort" data-k="surge" title="Lowest hurricane category whose surge reaches the parcel (CT DEEP SLOSH)">Surge</th><th class="sort n" data-k="depth">Depth (ft)</th><th class="sort n" data-k="tide">Lost to tide</th><th class="sort n" data-k="dmg">1% flood damage</th><th class="sort n" data-k="d">Added tax / yr</th>
+    </tr></thead><tbody><tr><td colspan="11" class="empty">No town analyzed yet.</td></tr></tbody></table></div>
     <div class="ledgernote" id="ledgernote"></div>
   </section>
 
@@ -400,6 +414,7 @@ th.sort[aria-sort] .ar{opacity:1}
       <p><b>Inland flooding.</b> Parcels in riverine A, AE, AO and AH zones from the <a href="https://hazards.fema.gov/femaportal/wps/portal/NFHLWMS" target="_blank" rel="noopener">FEMA National Flood Hazard Layer</a> use the base flood elevation (or zone depth) plus a rise in flood elevation that grows with the scenario. Parcels in the 0.2% annual chance zone begin to flood once that rise exceeds their assumed margin.</p>
       <p><b>Buildings.</b> Each building in the <a href="https://services3.arcgis.com/3FL1kr7L4LvwA2Kb/arcgis/rest/services/2D_Building_Footprints/FeatureServer/0" target="_blank" rel="noopener">CT 2D Building Footprints</a> layer is placed on the parcel that contains it, and its ground elevation is sampled at the footprint. Flood depth and tidal loss for buildings use each building's own ground, with the parcel's building value split by footprint area. Land loss uses the parcel's ground points. Parcels with no mapped building fall back to the parcel point.</p>
       <p><b>Flood extent and depth.</b> The map shading and the flooded-area chart compare USGS lidar ground elevation with the same water levels used for parcels: future high tide, the coastal 1% still-water elevation or the FEMA base flood elevation, each raised for the scenario and year. This bathtub method does not model flood barriers, drainage or wave effects.</p>
+      <p><b>Coastal hazards.</b> The Coastal hazards card and map layers add datasets from the <a href="https://maps.cteco.uconn.edu/help/coastalhazviewer_layers/" target="_blank" rel="noopener">CT ECO Coastal Hazards Viewer</a>: CT DEEP hurricane surge inundation for Category 1–4 storms (SLOSH model, 2012, at today's sea level), 2014 hurricane evacuation zones, the CGS 22a-94 coastal boundary, erosion susceptibility (2005), short-term shoreline change 1983–2006 (CT Sea Grant), FEMA Storm Sandy damage assessments and USGS high-water marks, DEEP's 2009 sea level rise inundation layers (shown at the increment nearest the selected scenario and year), and CT ECO 2023 aerial imagery. They describe exposure; they do not change the tax-at-risk calculation.</p>
       <p><b>From depth to dollars.</b> Building damage follows the USACE generic depth–damage curve for one-story homes without basements, applied to depth above the first floor. Tax at risk adds assessed value lost to permanent inundation, a market discount on newly exposed parcels, and the annualized reassessment after a design flood. All dollar figures are in today's dollars: assessments and the mill rate stay at current values, with no inflation or appreciation, so the cumulative figure uses a real discount rate.</p>
       <p><b>Use with care.</b> This is a screening tool. A point inside each parcel stands in for the building location, elevations are bare-earth, and the assumptions panel holds values to replace with local figures. Connecticut's planning standard is 0.5 m (20 in) of sea level rise by 2050 (<a href="https://portal.ct.gov/deep/coastal-resources/coastal-hazards/sea-level-rise" target="_blank" rel="noopener">CGS 25-68o</a>).</p>
     </div>
@@ -527,6 +542,7 @@ async function loadSLR(stationId){
 
 /* ---------- pipeline ---------- */
 async function analyze(){
+  if(typeof hzReset==="function")hzReset();
   const town=$("town").value;$("run").disabled=true;$("rep").disabled=true;$("log").innerHTML="";firstLog=false;prog(0);
   S.townName=prettyTown(town);S.townRaw=town;
   {const m=millFor(town);if(m&&!S.millTouched){$("p_mill").value=m;$("p_mill").title=`FY${S.millFY} CT OPM mill rate for ${S.townName}`}}const ptsPer=+$("p_pts").value,buffer=+$("p_buf").value||1500;
@@ -617,6 +633,7 @@ async function analyze(){
     log("Done. Change the scenario and year to compare.","ok");
     floodReset();buildMap();recompute();$("csv").disabled=false;$("rep").disabled=false;$("play").disabled=false;
     floodFetchView().finally(floodTownStart);
+    if(typeof hzStart==="function")hzStart();
   }catch(e){log("Analysis stopped: "+e.message+". Try again in a minute.","e")}
   $("run").disabled=false;
 }
@@ -705,6 +722,7 @@ function recompute(){
   drawTaxChart();
   drawMix(breakdown(r,pr));drawTable(r);styleMap();
   if(typeof floodRender==="function"){floodRender();floodAcres()}
+  if(typeof hzOnScenario==="function")hzOnScenario();
   drawRegion();
 }
 function niceMax(v){const p=Math.pow(10,Math.floor(Math.log10(v)));for(const f of[1,1.2,2,4,6,8,10])if(f*p>=v)return f*p;return 10*p}
@@ -745,18 +763,18 @@ function drawMix(b){
 function hazardPill(s){if(!s)return"";if(s.tideShare>0)return`<span class="pill tidal">Tidal</span>`;if(s.depth>0)return`<span class="pill ${s.src.toLowerCase()}">${s.src}</span>`;return""}
 const SORT={k:"d",dir:-1};
 const SORTVAL={id:x=>String(x.p.a.Parcel_ID||""),loc:x=>String(x.p.a.Location||""),use:x=>x.p.useDesc,assessed:x=>x.p.assessed,elev:x=>x.p.gnd,
-  haz:x=>x.s1.tideShare>0?"Tidal":(x.s1.depth>0?x.s1.src:"~"),depth:x=>x.s1.depth>0?x.s1.depth:-1,tide:x=>x.s1.tideShare,dmg:x=>x.m1.dmg,d:x=>x.d};
+  haz:x=>x.s1.tideShare>0?"Tidal":(x.s1.depth>0?x.s1.src:"~"),depth:x=>x.s1.depth>0?x.s1.depth:-1,tide:x=>x.s1.tideShare,dmg:x=>x.m1.dmg,d:x=>x.d,surge:x=>x.p.hz&&x.p.hz.surge?x.p.hz.surge:9};
 function sortedRows(rows){const f=SORTVAL[SORT.k];const col=new Intl.Collator("en",{numeric:true,sensitivity:"base"});
   return rows.slice().sort((a,b)=>{const va=f(a),vb=f(b);const c=typeof va==="string"?col.compare(va,vb):va-vb;return c*SORT.dir||(b.d-a.d)})}
 function setupSort(){document.querySelectorAll("#tbl th.sort").forEach(th=>{const label=th.textContent;th.innerHTML=`<button type="button">${label}<span class="ar" aria-hidden="true">↕</span></button>`;
-  th.querySelector("button").onclick=()=>{const k=th.dataset.k;if(SORT.k===k)SORT.dir*=-1;else{SORT.k=k;SORT.dir=(["id","loc","use","haz"].includes(k))?1:-1}if(S.results)drawTable(S.results);else markSort()}});markSort()}
+  th.querySelector("button").onclick=()=>{const k=th.dataset.k;if(SORT.k===k)SORT.dir*=-1;else{SORT.k=k;SORT.dir=(["id","loc","use","haz","surge"].includes(k))?1:-1}if(S.results)drawTable(S.results);else markSort()}});markSort()}
 function markSort(){document.querySelectorAll("#tbl th.sort").forEach(th=>{const on=th.dataset.k===SORT.k;if(on)th.setAttribute("aria-sort",SORT.dir>0?"ascending":"descending");else th.removeAttribute("aria-sort");th.querySelector(".ar").textContent=on?(SORT.dir>0?"▲":"▼"):"↕"})}
 function drawTable(r){
   markSort();
   const all=sortedRows(r.rows),rows=all.slice(0,500);const tb=$("tbl").querySelector("tbody");
   $("ledgernote").textContent=all.length>rows.length?`Showing the first ${num(rows.length)} of ${num(all.length)} exposed parcels in this sort order. The CSV export has all of them.`:all.length?`${num(all.length)} exposed parcels.`:"";
-  if(!rows.length){tb.innerHTML=`<tr><td colspan="10" class="empty">No parcels exposed in this scenario and year.</td></tr>`;return}
-  tb.innerHTML=rows.map((x,i)=>`<tr data-i="${i}" tabindex="0"><td>${esc(x.p.a.Parcel_ID)}</td><td>${esc(x.p.a.Location)}</td><td>${esc(x.p.useDesc)}</td><td class="n">${money(x.p.assessed)}</td><td class="n">${x.p.gnd.toFixed(1)}</td><td>${hazardPill(x.s1)}</td><td class="n">${x.s1.depth>0?x.s1.depth.toFixed(1):"–"}</td><td class="n">${x.s1.tideShare>0?Math.round(x.s1.tideShare*100)+"%":"–"}</td><td class="n">${money(x.m1.dmg)}</td><td class="n"><b>${money(x.d)}</b></td></tr>`).join("");
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="11" class="empty">No parcels exposed in this scenario and year.</td></tr>`;return}
+  tb.innerHTML=rows.map((x,i)=>`<tr data-i="${i}" tabindex="0"><td>${esc(x.p.a.Parcel_ID)}</td><td>${esc(x.p.a.Location)}</td><td>${esc(x.p.useDesc)}</td><td class="n">${money(x.p.assessed)}</td><td class="n">${x.p.gnd.toFixed(1)}</td><td>${hazardPill(x.s1)}</td><td>${typeof hzSurgeCell==="function"?hzSurgeCell(x.p):""}</td><td class="n">${x.s1.depth>0?x.s1.depth.toFixed(1):"–"}</td><td class="n">${x.s1.tideShare>0?Math.round(x.s1.tideShare*100)+"%":"–"}</td><td class="n">${money(x.m1.dmg)}</td><td class="n"><b>${money(x.d)}</b></td></tr>`).join("");
   tb.querySelectorAll("tr").forEach(tr=>{const go=()=>{const p=rows[+tr.dataset.i].p;if(S.map){S.map.fitBounds([[p.bbox[1],p.bbox[0]],[p.bbox[3],p.bbox[2]]],{maxZoom:18,animate:false});openParcel(p)}$("map").scrollIntoView({behavior:"smooth",block:"center"})};tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter")go()}});
 }
 
@@ -831,7 +849,8 @@ function buildMap(){
     const dark=document.documentElement.dataset.theme==="dark"||(document.documentElement.dataset.theme!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches);
     const gray=L.tileLayer(`https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_${dark?"Dark":"Light"}_Gray_Base/MapServer/tile/{z}/{y}/{x}`,{maxZoom:19,maxNativeZoom:16,attribution:"Esri, HERE, Garmin, © OpenStreetMap contributors"}).addTo(S.map);
     const imagery=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri, Maxar, Earthstar Geographics"});
-    S.ctrl=L.control.layers({"Light gray":gray,"Imagery":imagery},{},{collapsed:true}).addTo(S.map);
+    const ct2023=L.tileLayer("https://cteco.uconn.edu/ctraster/rest/services/images/Ortho_2023_tiled/ImageServer/tile/{z}/{y}/{x}",{maxZoom:20,maxNativeZoom:20,attribution:"CT ECO 2023 orthoimagery"});
+    S.ctrl=L.control.layers({"Light gray":gray,"Imagery (Esri)":imagery,"CT aerial 2023 (CT ECO)":ct2023},{},{collapsed:true}).addTo(S.map);
     S.map.on("click",e=>{if(!S.layer||!S.map.hasLayer(S.layer))return;const m=merc(e.latlng.lng,e.latlng.lat),x=m[0]-S.O[0],y=m[1]-S.O[1];
       let hit=null,best=Infinity;for(const p of S.parcels){const b=p.mb;if(x<b[0]||x>b[2]||y<b[1]||y>b[3])continue;const a=(b[2]-b[0])*(b[3]-b[1]);if(a<best&&inCompact(x,y,p)){best=a;hit=p}}
       if(hit)openParcel(hit,e.latlng)});
@@ -863,7 +882,7 @@ function popup(p){const pr=P();const s=parcelState(p,S.scen,S.year,pr),s0=parcel
   ${p.bldgs?`<tr><td>Buildings</td><td>${p.bldgs.length}, lowest ground ${p.gnd.toFixed(1)} ft</td></tr>`:(p.elev!=null?`<tr><td>Buildings</td><td>none mapped</td></tr>`:"")}<tr><td>FEMA zone</td><td>${z}</td></tr>
   ${s?`<tr><td>Flood depth, ${SCEN_SHORT[S.scen]} ${S.year}</td><td>${s.depth>0?s.depth.toFixed(1)+" ft ("+s.src.toLowerCase()+")":"none"}</td></tr>
   <tr><td>Lost to high tide</td><td>${Math.round(s.tideShare*100)}%</td></tr><tr><td>1% flood damage</td><td>${money(m.dmg)}</td></tr>
-  <tr><td>Added tax at risk / yr</td><td><b>${money(m.tax-m0.tax)}</b></td></tr>`:""}</table></div>`}
+  <tr><td>Added tax at risk / yr</td><td><b>${money(m.tax-m0.tax)}</b></td></tr>`:""}${typeof hzPopupRows==="function"?hzPopupRows(p):""}</table></div>`}
 
 /* ---------- report ---------- */
 function reportMap(pr){
@@ -939,7 +958,8 @@ function buildReport(){
   ${rowsTop.map(x=>`<tr><td>${esc(x.p.a.Parcel_ID)}</td><td>${esc(x.p.a.Location)}</td><td>${esc(x.p.useDesc)}</td><td class="n">${money(x.p.assessed)}</td><td class="n">${x.p.gnd.toFixed(1)}</td><td>${x.s1.tideShare>0?"Tidal":x.s1.depth>0?x.s1.src:""}</td><td class="n">${x.s1.depth>0?x.s1.depth.toFixed(1):"–"}</td><td class="n">${x.s1.tideShare>0?Math.round(x.s1.tideShare*100)+"%":"–"}</td><td class="n">${money(x.d)}</td></tr>`).join("")}
   </tbody></table><p class="small">Top 25 of ${num(r.rows.length)} exposed parcels. The full list is available as a CSV export from the app.</p>`:"<p>No parcels exposed in this scenario and year.</p>"}
 
-  <h2>5. Assumptions</h2>
+  ${typeof hzReportHTML==="function"?hzReportHTML().replace("<h2 class=\"pb\">Coastal hazards</h2>","<h2 class=\"pb\">5. Coastal hazards</h2>"):""}
+  <h2>${typeof HZS!=="undefined"&&HZS.state==="ready"?6:5}. Assumptions</h2>
   <table><tbody>
   <tr><td>Sea level rise scenario</td><td>NOAA 2022 Interagency, ${esc(SCEN[S.scen])}; ${st.name} gauge (${S.station})</td></tr>
   <tr><td>Mean higher high water</td><td>${pr.mhhw.toFixed(2)} ft NAVD88</td></tr>
@@ -951,7 +971,7 @@ function buildReport(){
   <tr><td>Tax-exempt parcels</td><td>${pr.exempt?"Left out (state use 9xx or $0 assessed)":"Included"}</td></tr>
   </tbody></table>
 
-  <h2>6. Method and sources</h2>
+  <h2>${typeof HZS!=="undefined"&&HZS.state==="ready"?7:6}. Method and sources</h2>
   ${[...$("method").querySelectorAll("p")].map(p=>`<p class="small">${p.innerHTML}</p>`).join("")}
   <p class="small">Data retrieved ${now.toLocaleString("en-US")} from the Connecticut CAMA and Parcel Layer, FEMA National Flood Hazard Layer, USGS 3DEP and NOAA CO-OPS. Prepared with the SECOG Flood Risk &amp; Tax Base tool.</p>`;
   $("report").classList.add("open");$("report").scrollTop=0;
@@ -959,10 +979,10 @@ function buildReport(){
 
 /* ---------- CSV ---------- */
 function exportCSV(){
-  if(!S.results)return;const h=["Parcel_ID","Location","Town","State_Use","Use","Assessed_Total","Building_Appraised","Ground_ft_NAVD88","Buildings","Lowest_Building_Ground_ft","FEMA_Zone","BFE_ft","Scenario","Year","Hazard","Flood_Depth_ft","Tidal_Share_Lost","Flood_Damage_1pct","Added_Annual_Tax_At_Risk","Today_Annual_Tax_At_Risk"];
+  if(!S.results)return;const h=["Parcel_ID","Location","Town","State_Use","Use","Assessed_Total","Building_Appraised","Ground_ft_NAVD88","Buildings","Lowest_Building_Ground_ft","FEMA_Zone","BFE_ft","Scenario","Year","Hazard","Flood_Depth_ft","Tidal_Share_Lost","Flood_Damage_1pct","Added_Annual_Tax_At_Risk","Today_Annual_Tax_At_Risk",...(typeof HZ_CSV_HEAD!=="undefined"?HZ_CSV_HEAD:[])];
   const q=v=>{const s=String(v??"");return/[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
   const lines=[h.join(",")];
-  for(const x of S.results.rows.slice().sort((a,b)=>b.d-a.d)){const p=x.p;lines.push([p.a.Parcel_ID,p.a.Location,S.townName,p.use,p.useDesc,Math.round(p.assessed),Math.round(p.bldgAppr),p.elev.toFixed(2),p.bldgs?p.bldgs.length:0,p.gnd.toFixed(2),p.zone?p.zone.zone:"",p.zone&&p.zone.bfe!=null?p.zone.bfe:"",SCEN[S.scen],S.year,x.s1.tideShare>0?"Tidal":(x.s1.depth>0?x.s1.src:""),x.s1.depth>0?x.s1.depth.toFixed(2):"",x.s1.tideShare.toFixed(3),Math.round(x.m1.dmg),x.d.toFixed(2),x.m0.tax.toFixed(2)].map(q).join(","))}
+  for(const x of S.results.rows.slice().sort((a,b)=>b.d-a.d)){const p=x.p;lines.push([p.a.Parcel_ID,p.a.Location,S.townName,p.use,p.useDesc,Math.round(p.assessed),Math.round(p.bldgAppr),p.elev.toFixed(2),p.bldgs?p.bldgs.length:0,p.gnd.toFixed(2),p.zone?p.zone.zone:"",p.zone&&p.zone.bfe!=null?p.zone.bfe:"",SCEN[S.scen],S.year,x.s1.tideShare>0?"Tidal":(x.s1.depth>0?x.s1.src:""),x.s1.depth>0?x.s1.depth.toFixed(2):"",x.s1.tideShare.toFixed(3),Math.round(x.m1.dmg),x.d.toFixed(2),x.m0.tax.toFixed(2),...(typeof hzCSV==="function"?hzCSV(p):[])].map(q).join(","))}
   const blob=new Blob([lines.join("\n")],{type:"text/csv"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);
   a.download=`${S.townName.replace(/\s+/g,"_")}_${SCEN_SHORT[S.scen]}_${S.year}_flood_tax_risk.csv`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 
@@ -1031,5 +1051,6 @@ $("splashProceedBtn").onclick=()=>{$("splashScreen").hidden=true;$("townSearch")
 $("splashProceedBtn").focus();
 </script>
 <script src="flood.js"></script>
+<script src="hazards.js"></script>
 </body>
 </html>

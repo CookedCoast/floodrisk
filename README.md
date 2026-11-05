@@ -13,6 +13,9 @@ It is a static site (`index.html` + `logo.svg`) with no build step. Each time a 
 | Ground elevation (1 m lidar) | USGS 3DEP elevation service |
 | Sea level rise scenarios (2022 Interagency) | NOAA CO-OPS, Bridgeport and New London gauges |
 | Building footprints | CT 2D Building Footprints (ArcGIS) |
+| Hurricane surge (Cat 1–4), evacuation zones, coastal boundary, erosion susceptibility, shoreline change | CT DEEP feature services (CT ECO Coastal Hazards Viewer datasets) |
+| Storm Sandy damage assessments, high-water marks, surge depth; DEEP 2009 sea level rise inundation | CT ECO map services |
+| 2023 aerial imagery | CT ECO Ortho_2023_tiled |
 
 ## Flood extent and depth
 
