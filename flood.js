@@ -266,14 +266,14 @@ function floodAcres() {
 }
 function drawAcres() {
   const data = F.acres; if (!data) return;
-  $("acresChart").innerHTML = acresSVG(data, S.year, { grid: "var(--line)", text: "var(--muted)", mark: "var(--accent)",
+  $("acresChart").innerHTML = acresSVG(data, S.year, { W: chartW("acresChart"), grid: "var(--line)", text: "var(--muted)", mark: "var(--accent)",
     c: ["", "url(#acHatch)", "var(--d0)", "var(--d1)", "var(--d3)"] });
   const cur = data.find((d) => d.y === Math.round(S.year / 10) * 10) || data[data.length - 1];
   const tot = cur.a[1] + cur.a[2] + cur.a[3] + cur.a[4], base = data[0].a.slice(1).reduce((s, v) => s + v, 0);
   $("acresNote").textContent = `${SCEN[S.scen]}, ${cur.y}: ${num(cur.a[1])} acres of parcel land below high tide and ${num(cur.a[2] + cur.a[3] + cur.a[4])} acres in the 1% flood, ${num(tot)} in all (${num(base)} today).`;
 }
 function acresSVG(data, year, c) {
-  const W = 900, H = 250, m = { l: 64, r: 16, t: 24, b: 30 };
+  const W = Math.round(c.W || 900), H = W < 520 ? 220 : 250, m = { l: 56, r: 12, t: 24, b: 30 }, step = W < 480 ? 2 : 1;
   const tot = data.map((d) => d.a[1] + d.a[2] + d.a[3] + d.a[4]);
   const nice = niceMax(Math.max(1, ...tot)), bw = (W - m.l - m.r) / data.length;
   const Y = (v) => H - m.b - v / nice * (H - m.t - m.b);
@@ -285,11 +285,11 @@ function acresSVG(data, year, c) {
     for (const k of [1, 4, 3, 2]) { const v = d.a[k]; if (v <= 0) continue; s += `<rect x="${x.toFixed(1)}" y="${Y(acc + v).toFixed(1)}" width="${w.toFixed(1)}" height="${(Y(acc) - Y(acc + v)).toFixed(1)}" fill="${c.c[k]}"/>`; acc += v; }
     const sel = d.y === Math.round(year / 10) * 10;
     if (sel) s += `<rect x="${(x - 3).toFixed(1)}" y="${m.t}" width="${(w + 6).toFixed(1)}" height="${H - m.t - m.b}" fill="none" stroke="${c.mark}" stroke-width="1.5" stroke-dasharray="4 3"/>`;
-    s += `<text ${ft} x="${(x + w / 2).toFixed(1)}" y="${H - 10}" text-anchor="middle" fill="${c.text}"${sel ? ' font-weight="700"' : ""}>${d.y}</text>`;
+    if (i % step === 0 || sel) s += `<text ${ft} x="${(x + w / 2).toFixed(1)}" y="${H - 10}" text-anchor="middle" fill="${c.text}"${sel ? ' font-weight="700"' : ""}>${d.y}</text>`;
   });
   s += `<text ${ft} x="${m.l - 8}" y="12" text-anchor="end" fill="${c.text}">acres</text>`;
   const defs = `<defs><pattern id="acHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#0c447c"/><rect width="2" height="6" fill="#6f9fd3"/></pattern></defs>`;
-  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flooded parcel acres by year">${defs}${s}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flooded parcel acres by year">${defs}${s}</svg>`;
 }
 /* Town-wide flood image for the report (light background, print colors). */
 function floodReportImage() {
