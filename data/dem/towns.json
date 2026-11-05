@@ -822,6 +822,11 @@
    "town": "Woodstock",
    "built": "2026-11-04",
    "tiles": 104
+  },
+  "groton": {
+   "town": "Groton",
+   "built": "2026-11-05",
+   "tiles": 331
   }
  }
 }
